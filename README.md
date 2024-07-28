@@ -2,8 +2,11 @@ This is the data side of an economics research project attmepting to find correl
 
 Sources:
 https://vulcan.rc.nau.edu/
+
 https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html
+
 https://www.bea.gov/data/gdp
+
 https://apps.bea.gov/histdatacore/Regional_Accounts_new.html
 _____________________________________________________________________________________________________________________________________________________
 
