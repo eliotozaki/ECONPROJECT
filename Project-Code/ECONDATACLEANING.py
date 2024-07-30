@@ -250,7 +250,8 @@ gdp_df.set_index("GeoName")
 print(merged_df.loc[merged_df['County'].str.contains('Rocky Mountain'),'County'])
 
 
-pivoted_df = gdp_df.pivot_table(index='GeoName', columns='Unit', values='GDP(Thousands)', aggfunc='first')
+pivoted_df = gdp_df.pivot_table(index=['GeoName', 'GeoFIPS'], columns='Unit', values='GDP(Thousands)', aggfunc='first')
+
 # Flatten the column MultiIndex, if necessary
 pivoted_df.columns = [col for col in pivoted_df.columns]
 # Reset the index to turn GeoName back into a column
@@ -260,6 +261,7 @@ print(pivoted_df)
 
 # Separate GeoName into County and State columns
 pivoted_df[['County', 'State']] = pivoted_df['GeoName'].str.split(', ', expand=True).iloc[:, [0, 1]]
+pivoted_df['County'] = pivoted_df['County'].str.rstrip()
 #geosplit = pivoted_df['GeoName'].str.split(', ', expand=True)
 #geosplit.shape
 #geosplit.head()
@@ -304,8 +306,58 @@ print(states_with_differences)
 
 na_rows = pivoted_df[pivoted_df['State'].isna()]
 print(na_rows)
-
+nostate_counties = na_rows['County'].unique()
+print(merged_df[merged_df['County'].isin(nostate_counties)][['County', 'State']])
+pivoted_df.loc[pivoted_df['County']=="District of Columbia", 'State'] = 'DC'
+pivoted_df = pivoted_df.dropna(subset=['State'])
+pivoted_df.loc[pivoted_df['County'].str.startswith('West '), 'County'] = pivoted_df['County'].str.replace('West', 'W')
 
 #######CANNOT RUN YET, NEED TO ELIM NAS IN PIVOTED_DF
 #counties_with_asterisk = pivoted_df[pivoted_df['State'].str.contains('\*')][['County', 'State']]
 #print(counties_with_asterisk)
+
+counties_not_in_gdp = set(merged_df['County']) - set(pivoted_df['County'])
+counties_not_in_gdp = sorted(counties_not_in_gdp)
+print("Counties in merged_df but not in gdp_df:")
+for county in counties_not_in_gdp:
+    print(county)
+
+counties_not_in_merged = set(pivoted_df['County']) - set(merged_df['County'])
+counties_not_in_merged = sorted(counties_not_in_merged)
+print("Counties in gdp but not in merged (sorted alphabetically):")
+for county in counties_not_in_merged:
+    print(county)
+
+print(pivoted_df[pivoted_df['State'].str.contains('\*')])
+edited_counties = pivoted_df[pivoted_df['State'].str.contains('\*')]
+
+pivoted_df.head(20)
+#Stopping point
+pivoted_df.to_csv("PivotedData-Partial.csv", index=False)
+
+
+
+geo_dict = pivoted_df.set_index('GeoFIPS')[['State', 'County']].to_dict('index')
+
+# Convert the values from dictionaries to tuples
+geo_dict = {k: (v['State'], v['County']) for k, v in geo_dict.items()}
+print(geo_dict)
+
+# Create a new column 'GeoTuple' in merged_df
+merged_df['GeoFIPS'] = merged_df.apply(lambda x: geo_dict.get((x['County'], x['State']), ''), axis=1)
+merged_df.head(20)
+print(merged_df.isna().sum())
+
+
+
+
+
+# Trying to fix GeoFIPS dict problems
+with open('/mnt/data/geo_data.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    # Write the header row
+    writer.writerow(["Code", "State", "County"])
+    
+    # Write the data rows
+    for code, (state, county) in geo_dict.items():
+        writer.writerow([code.strip(), state, county.strip()])
