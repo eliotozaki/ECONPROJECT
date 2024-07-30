@@ -153,6 +153,63 @@ population_df = pd.read_csv("Cleaned-Datasets\POPULATIONDATA-Cleaned.csv")
 emissions_df = pd.read_csv("Cleaned-Datasets/EMISSIONSDATA-Cleaned.csv")
 merged_df = pd.read_csv("AllData-MergedDS.csv")
 
+state_initials = {
+    'Alabama': 'AL',
+    'Alaska': 'AK',
+    'Arizona': 'AZ',
+    'Arkansas': 'AR',
+    'California': 'CA',
+    'Colorado': 'CO',
+    'Connecticut': 'CT',
+    'Delaware': 'DE',
+    'Florida': 'FL',
+    'Georgia': 'GA',
+    'Hawaii': 'HI',
+    'Idaho': 'ID',
+    'Illinois': 'IL',
+    'Indiana': 'IN',
+    'Iowa': 'IA',
+    'Kansas': 'KS',
+    'Kentucky': 'KY',
+    'Louisiana': 'LA',
+    'Maine': 'ME',
+    'Maryland': 'MD',
+    'Massachusetts': 'MA',
+    'Michigan': 'MI',
+    'Minnesota': 'MN',
+    'Mississippi': 'MS',
+    'Missouri': 'MO',
+    'Montana': 'MT',
+    'Nebraska': 'NE',
+    'Nevada': 'NV',
+    'New Hampshire': 'NH',
+    'New Jersey': 'NJ',
+    'New Mexico': 'NM',
+    'New York': 'NY',
+    'North Carolina': 'NC',
+    'North Dakota': 'ND',
+    'Ohio': 'OH',
+    'Oklahoma': 'OK',
+    'Oregon': 'OR',
+    'Pennsylvania': 'PA',
+    'Rhode Island': 'RI',
+    'South Carolina': 'SC',
+    'South Dakota': 'SD',
+    'Tennessee': 'TN',
+    'Texas': 'TX',
+    'Utah': 'UT',
+    'Vermont': 'VT',
+    'Virginia': 'VA',
+    'Washington': 'WA',
+    'West Virginia': 'WV',
+    'Wisconsin': 'WI',
+    'Wyoming': 'WY'
+}
+print(state_initials['California'])  # Output: CA
+
+states = list(state_initials.keys())
+initials = list(state_initials.values())
+
 import chardet
 with open("Cleaned-Datasets\County-MSA-GDP-DATA.csv", 'rb') as rawdata:
     result = chardet.detect(rawdata.read(100000))
@@ -188,15 +245,67 @@ gdp_df.loc[gdp_df['GeoName'] =='LaSalle', 'GeoName'] = 'La Salle'
 print(gdp_df.loc[gdp_df['GeoName'].str.contains('Emporia'),'GeoName'])
 print(merged_df.loc[merged_df['County'].str.contains('Columbia'),'County'])
 print(gdp_df.loc[~gdp_df['GeoName'].str.contains(','),'GeoName'])
+
 gdp_df.set_index("GeoName")
+print(merged_df.loc[merged_df['County'].str.contains('Rocky Mountain'),'County'])
+
+
+pivoted_df = gdp_df.pivot_table(index='GeoName', columns='Unit', values='GDP(Thousands)', aggfunc='first')
+# Flatten the column MultiIndex, if necessary
+pivoted_df.columns = [col for col in pivoted_df.columns]
+# Reset the index to turn GeoName back into a column
+pivoted_df.reset_index(inplace=True)
+print(pivoted_df)
+
+
+# Separate GeoName into County and State columns
+pivoted_df[['County', 'State']] = pivoted_df['GeoName'].str.split(', ', expand=True).iloc[:, [0, 1]]
+#geosplit = pivoted_df['GeoName'].str.split(', ', expand=True)
+#geosplit.shape
+#geosplit.head()
+#geosplit[:-1].head()
+pivoted_df.head(10)
+pivoted_df.shape
+pivoted_df.set_index("County")
+pivoted_df.sort_values(["State", "County"], inplace=True)
+merged_df.sort_values(["State", "County"], inplace=True)
+merged_df.columns
+
+merged_df[['County','State']].head(10)
+pivoted_df[['County','State']].head(10)
 
 
 
 
+pivoted_counties = pivoted_df.groupby('State')['County'].nunique().reset_index(name='Pivoted_Counties')
+merged_counties = merged_df.groupby('State')['County'].nunique().reset_index(name='Merged_Counties')
+
+# Merge the results on 'State'
+merged_counts_df = pd.merge(pivoted_counties, merged_counties, on='State', how='outer')
+
+# Fill NaN values with 0 (if any state is missing in one of the datasets)
+merged_counts_df.fillna(0, inplace=True)
+
+# Convert to integers (since counts should be integers)
+merged_counts_df['Pivoted_Counties'] = merged_counts_df['Pivoted_Counties'].astype(int)
+merged_counts_df['Merged_Counties'] = merged_counts_df['Merged_Counties'].astype(int)
+
+# Compare the results
+merged_counts_df['Difference'] = merged_counts_df['Pivoted_Counties'] - merged_counts_df['Merged_Counties']
+
+# Display the result
+print(merged_counts_df)
+print(merged_counts_df[merged_counts_df['Difference'] != 0])
+print(merged_counts_df['Pivoted_Counties'][merged_counts_df['State'] == 'DE'])
+print(merged_df['County'][merged_df['State'] == 'DE'])
+
+states_with_differences = merged_counts_df['State'][merged_counts_df['Difference'] != 0].tolist()
+print(states_with_differences)
+
+na_rows = pivoted_df[pivoted_df['State'].isna()]
+print(na_rows)
 
 
-
-
-
-
-
+#######CANNOT RUN YET, NEED TO ELIM NAS IN PIVOTED_DF
+#counties_with_asterisk = pivoted_df[pivoted_df['State'].str.contains('\*')][['County', 'State']]
+#print(counties_with_asterisk)
