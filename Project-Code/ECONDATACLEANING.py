@@ -330,6 +330,20 @@ for county in counties_not_in_merged:
 
 print(pivoted_df[pivoted_df['State'].str.contains('\*')])
 edited_counties = pivoted_df[pivoted_df['State'].str.contains('\*')]
+edited_counties.head(len(edited_counties))
+
+counties_not_in_merged = []
+for county, state in zip(edited_counties['County'], edited_counties['State'].str[:2]):
+    if (county, state) not in zip(merged_df['County'], merged_df['State']):
+        counties_not_in_merged.append(county)
+print(counties_not_in_merged)
+
+counties_in_merged = list(set(edited_counties['County']) - set(counties_not_in_merged))
+print(counties_in_merged)
+
+
+
+
 
 pivoted_df.head(20)
 #Stopping point
