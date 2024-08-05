@@ -1,21 +1,21 @@
 GeoName,GeoFIPS,Quantity index,Thousands of chained 2012 dollars,Thousands of dollars,County,State
-"Aleutians E , AK"," ""02013""",161.56,196383,233494,Aleutians E ,AK
-"Aleutians West , AK"," ""02016""",98.043,355398,444798,Aleutians West ,AK
-"Anchorage Municipality, AK"," ""02020""",96.978,20410885,24832047,Anchorage Municipality,AK
-"Bethel , AK"," ""02050""",96.266,604118,723486,Bethel ,AK
-"Bristol Bay , AK"," ""02060""",110.151,121530,148048,Bristol Bay ,AK
-"Denali , AK"," ""02068""",118.118,236319,286296,Denali ,AK
-"Dillingham , AK"," ""02070""",92.772,216293,267597,Dillingham ,AK
-"Fairbanks North Star , AK"," ""02090""",94.578,5286112,6477984,Fairbanks North Star ,AK
-"Haines , AK"," ""02100""",103.134,91810,116205,Haines ,AK
-"Juneau , AK"," ""02110""",95.353,2228455,2682516,Juneau ,AK
-"Kenai Peninsula , AK"," ""02122""",97.943,2657093,3070355,Kenai Peninsula ,AK
-"Kodiak Island , AK"," ""02150""",91.622,685696,848359,Kodiak Island ,AK
-"Lake and Peninsula , AK"," ""02164""",119.961,93567,114731,Lake and Peninsula ,AK
-"Matanuska-Susitna , AK"," ""02170""",117.186,2683216,3378629,Matanuska-Susitna ,AK
-"Nome , AK"," ""02180""",102.648,397390,480920,Nome ,AK
-"North Slope , AK"," ""02185""",53.967,8652395,6885164,North Slope ,AK
-"Northwest Arctic , AK"," ""02188""",98.655,588940,634546,Northwest Arctic ,AK
+GeoName," ""02013""",161.56,196383,233494,Aleutians E ,AK
+GeoName," ""02016""",98.043,355398,444798,Aleutians West ,AK
+GeoName," ""02020""",96.978,20410885,24832047,Anchorage Municipality,AK
+GeoName," ""02050""",96.266,604118,723486,Bethel ,AK
+GeoName," ""02060""",110.151,121530,148048,Bristol Bay ,AK
+GeoName," ""02068""",118.118,236319,286296,Denali ,AK
+GeoName," ""02070""",92.772,216293,267597,Dillingham ,AK
+GeoName," ""02090""",94.578,5286112,6477984,Fairbanks North Star ,AK
+GeoName," ""02100""",103.134,91810,116205,Haines ,AK
+GeoName," ""02110""",95.353,2228455,2682516,Juneau ,AK
+GeoName," ""02122""",97.943,2657093,3070355,Kenai Peninsula ,AK
+GeoName," ""02150""",91.622,685696,848359,Kodiak Island ,AK
+GeoName," ""02164""",119.961,93567,114731,Lake and Peninsula ,AK
+GeoName," ""02170""",117.186,2683216,3378629,Matanuska-Susitna ,AK
+GeoName," ""02180""",102.648,397390,480920,Nome ,AK
+GeoName," ""02185""",53.967,8652395,6885164,North Slope ,AK
+GeoName," ""02188""",98.655,588940,634546,Northwest Arctic ,AK
 "Sitka , AK"," ""02220""",83.495,407000,513094,Sitka ,AK
 "Southeast Fairbanks , AK"," ""02240""",110.756,687226,760172,Southeast Fairbanks ,AK
 "Yukon-Koyukuk , AK"," ""02290""",70.292,277461,354226,Yukon-Koyukuk ,AK
