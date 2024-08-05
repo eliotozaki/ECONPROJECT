@@ -354,6 +354,12 @@ pivoted_df.loc[pivoted_df['County']=="District of Columbia", 'State'] = 'DC'
 pivoted_df = pivoted_df.dropna(subset=['State'])
 pivoted_df.loc[pivoted_df['County'].str.startswith('West '), 'County'] = pivoted_df['County'].str.replace('West', 'W')
 
+# Removing the spaces from the end of counties who end in spaces.
+for county in merged_df['County']:
+    if county.endswith(' '):
+        print(county)
+        merged_df['County'] = merged_df['County'].str.rstrip()
+
 #######CANNOT RUN YET, NEED TO ELIM NAS IN PIVOTED_DF
 #counties_with_asterisk = pivoted_df[pivoted_df['State'].str.contains('\*')][['County', 'State']]
 #print(counties_with_asterisk)
@@ -390,6 +396,53 @@ print(counties_in_merged)
 
 # Removing the asterix from the 'State' column from the rows with counties in merged_df
 pivoted_df.loc[pivoted_df['County'].isin(counties_in_merged), 'State'] = pivoted_df['State'].str[:2]
+print(pivoted_df[pivoted_df['State'].str.contains('\*')])
+
+
+## Cleaning up the counties that have asterixes in the 'State' column without plusses.
+counties_without_plus = [county for county in counties_not_in_merged if '+' not in county]
+print(counties_without_plus)
+
+from difflib import get_close_matches
+similar_counties = {}
+
+for county in counties_not_in_merged:
+    matches = get_close_matches(county, merged_df['County'],n=1,cutoff=0.7)
+    if matches:
+        similar_counties[county] = matches[0]
+
+print(similar_counties)
+
+## More specific cleaning based on those counties
+print(pivoted_df[pivoted_df['County'] == 'Skagway-Hoonah-Angoon'])
+# Dropping the row with 'Skagway-Hoonah-Angoon' in the 'County' column from gdp df (pivoted)
+pivoted_df = pivoted_df[pivoted_df['County'] != 'Skagway-Hoonah-Angoon']
+
+
+## Re-running prints of different combinations of counties with/without asterisks and plusses (After removing some counties)
+counties_not_in_merged = []
+for county, state in zip(edited_counties['County'], edited_counties['State'].str[:2]):
+    if (county, state) not in zip(merged_df['County'], merged_df['State']):
+        counties_not_in_merged.append(county)
+print(counties_not_in_merged)
+counties_in_merged = list(set(edited_counties['County']) - set(counties_not_in_merged))
+print(counties_in_merged)
+
+pivoted_df.loc[pivoted_df['County'].isin(counties_in_merged), 'State'] = pivoted_df['State'].str[:2]
+print(pivoted_df[pivoted_df['State'].str.contains('\*')])
+counties_without_plus = [county for county in counties_not_in_merged if '+' not in county]
+print(counties_without_plus)
+similar_counties = {}
+
+# Finding similar counties with a lower cutoff
+for county in counties_not_in_merged:
+    matches = get_close_matches(county, merged_df['County'],n=2,cutoff=0.6)
+    if matches:
+        similar_counties[county] = matches[0]
+
+for county in similar_counties.keys():
+    print(county+": "+ similar_counties[county])
+
 
 ######################
 
@@ -427,11 +480,11 @@ print(merged_df.isna().sum())
 
 
 # Trying to fix GeoFIPS dict problems
-with open('/mnt/data/geo_data.csv', mode='w', newline='') as file:
+#with open('/mnt/data/geo_data.csv', mode='w', newline='') as file:
     #writer = csv.writer(file)
     # Write the header row
-    writer.writerow(["Code", "State", "County"])
+    #writer.writerow(["Code", "State", "County"])
     
     # Write the data rows
-    for code, (state, county) in geo_dict.items():
-        writer.writerow([code.strip(), state, county.strip()])
+    #for code, (state, county) in geo_dict.items():
+    #    writer.writerow([code.strip(), state, county.strip()])
