@@ -1,3 +1,10 @@
+#Eliot Ozaki
+#ECON DATA CLEANING for Income effect on Emissions Research Project
+
+
+### Part 1: Data Cleaning/Merging of Population and Emissions Datasets
+
+## Imports
 import pandas as pd
 import numpy as np 
 import matplotlib.pyplot as plt
@@ -5,10 +12,11 @@ import seaborn as sns
 import calmap
 from pandas_profiling import ProfileReport
 
+## Load the datasets
 population_df = pd.read_csv("C:/Users\eliot/OneDrive/Desktop/ECONPROJECT/Cleaned-Datasets/POPULATIONDATA-Cleaned.csv")
 emissions_df = pd.read_csv("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Base-Datasets/COUNTY_EMISSIONS2021.csv")
 
-
+##Create a dictionary of state names and their initials
 state_initials = {
     'Alabama': 'AL',
     'Alaska': 'AK',
@@ -63,16 +71,21 @@ state_initials = {
 }
 print(state_initials['California'])  # Output: CA
 
+
+
+## Using the dictionary
 states = list(state_initials.keys())
 initials = list(state_initials.values())
 population_df.tail(20)
 
+# Changing state names to initials
 for state in states:
     population_df.loc[population_df['State']==state,'State'] = state_initials[state]
     
 print(population_df['State'].unique())
 print(population_df['County'][population_df['County'].apply(len) <= 2])
 
+# Print the number of unique counties per state in the population dataset
 index = 0
 popcounts = 0
 for initial in initials:
@@ -84,9 +97,13 @@ for initial in initials:
     print(f"{initial}: {count}")
 
 
+## Findind differences between the datasets, and cleaning them up
+
+# Import both as new dataframes
 population_df = pd.read_csv("C:/Users\eliot/OneDrive/Desktop/ECONPROJECT/Cleaned-Datasets/POPULATIONDATA-Cleaned.csv")
 emissions_df = pd.read_csv("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Base-Datasets/COUNTY_EMISSIONS2021.csv")
 
+# Group by 'State' and count the number of unique counties
 emissions_counties = emissions_df.groupby('State')['County'].nunique().reset_index(name='Emissions_Counties')
 population_counties = population_df.groupby('State')['County'].nunique().reset_index(name='Population_Counties')
 
@@ -109,8 +126,10 @@ print(merged_df[merged_df['Difference']!=0])
 print(merged_df['Emissions_Counties'][merged_df['State']=='DE'])
 print(emissions_df['County'][emissions_df['State']=='DE'])
 
+# Find the states with differences
 states_with_differences = merged_df['State'][merged_df['Difference'] != 0].tolist()
 
+# Printing the states with differences and what counties they differe in
 for state in states_with_differences:
     pop_counties = set(population_df[population_df['State'] == state]['County'])
     emis_counties = set(emissions_df[emissions_df['State'] == state]['County'])
@@ -126,20 +145,24 @@ for state in states_with_differences:
 print(len(population_df))
 print(len(emissions_df))
 
+# Setting index to 'County' for both datasets
 emissions_df.set_index("County")
 population_df.set_index("County")
 
+# Merging the datasets
 df = pd.merge(population_df,emissions_df)
 
 df.describe()
 df.columns
 
+# Exporting the cleaned datasets
 population_df.to_csv("POPULATIONDATA-Cleaned.csv")
 emissions_df.to_csv("EMISSIONSDATA-Cleaned.csv")
 df.to_csv("AllData-MergedDS.csv")
 
 
 
+### Part 2: Data Cleaning/Merging of GDP Dataset
 
 #Cleaning More Datasets
 import pandas as pd
@@ -149,10 +172,13 @@ import seaborn as sns
 import calmap
 #from pandas_profiling import ProfileReport
 
+## Cleaning
+# Load the datasets
 population_df = pd.read_csv("Cleaned-Datasets\POPULATIONDATA-Cleaned.csv")
 emissions_df = pd.read_csv("Cleaned-Datasets/EMISSIONSDATA-Cleaned.csv")
 merged_df = pd.read_csv("AllData-MergedDS.csv")
 
+# Reit. dictionary of state names and their initials
 state_initials = {
     'Alabama': 'AL',
     'Alaska': 'AK',
@@ -207,32 +233,42 @@ state_initials = {
 }
 print(state_initials['California'])  # Output: CA
 
+# More reit.
 states = list(state_initials.keys())
 initials = list(state_initials.values())
 
+# Trying to load gdp dataset
 import chardet
 with open("Cleaned-Datasets\County-MSA-GDP-DATA.csv", 'rb') as rawdata:
     result = chardet.detect(rawdata.read(100000))
 result
 
+# Load the GDP dataset
 gdp_df = pd.read_csv("Cleaned-Datasets\County-MSA-GDP-DATA.csv",encoding="Windows-1252")
-gdp_df.describe()
 
+# Initial look at the dataset
+gdp_df.describe()
 gdp_df.head(10)
 
+## Inital Cleaning
+
+# Remove rows with Geoname of United States and any aggregated state rows.
 gdp_df = gdp_df[~gdp_df['GeoName'].isin(states + ['United States'])]
 
+# Check gdp df length
 print(len(gdp_df)/3)
+
+# Check differences from gdp and merged datasets
 counties_not_in_gdp = set(merged_df['County'].str.split(',').str[0]) - set(gdp_df['GeoName'].str.split(',').str[0])
 print("Counties in merged_df but not in gdp_df:")
 for county in counties_not_in_gdp:
     print(county)
-
 counties_not_in_merged = set(gdp_df['GeoName'].str.split(',').str[0]) - set(merged_df['County'].str.split(',').str[0])
 print("Counties in gdp but not in merged:")
 for county in counties_not_in_merged:
     print(county)
 
+## Cleaning the GDP dataset
 gdp_df.loc[gdp_df['GeoName'].str.contains(r' \(Independent City\)', regex=True), 'GeoName'] = \
     gdp_df['GeoName'].str.replace(r' \(Independent City\)', '', regex=True).str.strip().apply(lambda x: "City of " + x)
 gdp_df['GeoName'] = gdp_df['GeoName'].str.replace('St.', 'St')
@@ -242,13 +278,18 @@ gdp_df['GeoName'] = gdp_df['GeoName'].str.replace('City and Borough', '')
 gdp_df['GeoName'] = gdp_df['GeoName'].str.replace('Borough', '')
 gdp_df.loc[gdp_df['GeoName'] =='LaSalle', 'GeoName'] = 'La Salle'
 
+#Doing some checks on specific values
 print(gdp_df.loc[gdp_df['GeoName'].str.contains('Emporia'),'GeoName'])
 print(merged_df.loc[merged_df['County'].str.contains('Columbia'),'County'])
 print(gdp_df.loc[~gdp_df['GeoName'].str.contains(','),'GeoName'])
-
-gdp_df.set_index("GeoName")
 print(merged_df.loc[merged_df['County'].str.contains('Rocky Mountain'),'County'])
 
+#Setting Index of gdp df
+gdp_df.set_index("GeoName")
+
+
+
+## Pivoting the GDP dataset
 
 pivoted_df = gdp_df.pivot_table(index=['GeoName', 'GeoFIPS'], columns='Unit', values='GDP(Thousands)', aggfunc='first')
 
@@ -273,12 +314,11 @@ pivoted_df.sort_values(["State", "County"], inplace=True)
 merged_df.sort_values(["State", "County"], inplace=True)
 merged_df.columns
 
+# looking at merged and pivoted dfs.
 merged_df[['County','State']].head(10)
 pivoted_df[['County','State']].head(10)
 
-
-
-
+## Finding differences between pivoted and merged dataset
 pivoted_counties = pivoted_df.groupby('State')['County'].nunique().reset_index(name='Pivoted_Counties')
 merged_counties = merged_df.groupby('State')['County'].nunique().reset_index(name='Merged_Counties')
 
@@ -301,9 +341,11 @@ print(merged_counts_df[merged_counts_df['Difference'] != 0])
 print(merged_counts_df['Pivoted_Counties'][merged_counts_df['State'] == 'DE'])
 print(merged_df['County'][merged_df['State'] == 'DE'])
 
+# Printing states with differences in number of counties
 states_with_differences = merged_counts_df['State'][merged_counts_df['Difference'] != 0].tolist()
 print(states_with_differences)
 
+## Removing NA rows and doing more specific cleaning
 na_rows = pivoted_df[pivoted_df['State'].isna()]
 print(na_rows)
 nostate_counties = na_rows['County'].unique()
@@ -316,6 +358,8 @@ pivoted_df.loc[pivoted_df['County'].str.startswith('West '), 'County'] = pivoted
 #counties_with_asterisk = pivoted_df[pivoted_df['State'].str.contains('\*')][['County', 'State']]
 #print(counties_with_asterisk)
 
+## Checking what counties are in one df but not the other
+# ** IMPORTANT 
 counties_not_in_gdp = set(merged_df['County']) - set(pivoted_df['County'])
 counties_not_in_gdp = sorted(counties_not_in_gdp)
 print("Counties in merged_df but not in gdp_df:")
@@ -328,10 +372,13 @@ print("Counties in gdp but not in merged (sorted alphabetically):")
 for county in counties_not_in_merged:
     print(county)
 
+
+## Finding rows in pivoted_df with asterisks in the 'State' column
 print(pivoted_df[pivoted_df['State'].str.contains('\*')])
 edited_counties = pivoted_df[pivoted_df['State'].str.contains('\*')]
 edited_counties.head(len(edited_counties))
 
+# Using that list, finding counties that are in the merged_df/not in merged df
 counties_not_in_merged = []
 for county, state in zip(edited_counties['County'], edited_counties['State'].str[:2]):
     if (county, state) not in zip(merged_df['County'], merged_df['State']):
@@ -341,9 +388,22 @@ print(counties_not_in_merged)
 counties_in_merged = list(set(edited_counties['County']) - set(counties_not_in_merged))
 print(counties_in_merged)
 
+# Removing the asterix from the 'State' column from the rows with counties in merged_df
+pivoted_df.loc[pivoted_df['County'].isin(counties_in_merged), 'State'] = pivoted_df['State'].str[:2]
+
+######################
 
 
 
+
+
+
+
+
+
+
+
+##### Trying to add/Fix GeoFIPS Column to be unique ID for the tables.
 
 pivoted_df.head(20)
 #Stopping point
@@ -368,7 +428,7 @@ print(merged_df.isna().sum())
 
 # Trying to fix GeoFIPS dict problems
 with open('/mnt/data/geo_data.csv', mode='w', newline='') as file:
-    writer = csv.writer(file)
+    #writer = csv.writer(file)
     # Write the header row
     writer.writerow(["Code", "State", "County"])
     
