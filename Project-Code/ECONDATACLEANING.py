@@ -303,10 +303,6 @@ print(pivoted_df)
 # Separate GeoName into County and State columns
 pivoted_df[['County', 'State']] = pivoted_df['GeoName'].str.split(', ', expand=True).iloc[:, [0, 1]]
 pivoted_df['County'] = pivoted_df['County'].str.rstrip()
-#geosplit = pivoted_df['GeoName'].str.split(', ', expand=True)
-#geosplit.shape
-#geosplit.head()
-#geosplit[:-1].head()
 pivoted_df.head(10)
 pivoted_df.shape
 pivoted_df.set_index("County")
@@ -361,6 +357,8 @@ for county in merged_df['County']:
         merged_df['County'] = merged_df['County'].str.rstrip()
 
 #######CANNOT RUN YET, NEED TO ELIM NAS IN PIVOTED_DF
+# Printing rows with NA values in pivoted_df
+pivoted_df = pivoted_df.dropna()
 #counties_with_asterisk = pivoted_df[pivoted_df['State'].str.contains('\*')][['County', 'State']]
 #print(counties_with_asterisk)
 
@@ -463,11 +461,11 @@ print(merged_df.loc[merged_df['County'].str.contains('River'),['County','State']
 print(pivoted_df.loc[pivoted_df['County'].str.contains('River')])
 
 # Dropping Chugach and Copper River from pivoted_df (They are listed under valdez-cordova)
-pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Chugach')]
-pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Copper river')]
-edited_counties = edited_counties[~edited_counties['County'].str.contains('Chugach')]
-edited_counties = edited_counties[~edited_counties['County'].str.contains('Copper river')]
-similar_counties = {county: similar_counties[county] for county in similar_counties if county != 'Chugach' and county != 'Copper river'}
+#pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Chugach')]
+#pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Copper river')]
+#edited_counties = edited_counties[~edited_counties['County'].str.contains('Chugach')]
+#edited_counties = edited_counties[~edited_counties['County'].str.contains('Copper river')]
+#similar_counties = {county: similar_counties[county] for county in similar_counties if county != 'Chugach' and county != 'Copper river'}
 
 # Changing wrangell to Wrangell City and Borough in pivoted df to match merged df.
 print(merged_df[merged_df['County'].str.contains('Wrangell')])
@@ -506,9 +504,91 @@ for county in similar_counties.keys():
     if '+' not in county:
         print(county+": "+ similar_counties[county])
 
+# Fixing the Valdez-Cordova issue (Chugach and Copper River)
 print(pivoted_df.loc[pivoted_df['County'].str.contains('Ketchikan'),'County'])
+print(pivoted_df[pivoted_df['County'].isin(similar_counties.keys())])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Valdez')|pivoted_df['County'].str.contains('Copper')|pivoted_df['County'].str.contains('Chugach')])
+print(merged_df.loc[merged_df['County'].str.contains('Valdez')|merged_df['County'].str.contains('Copper')|merged_df['County'].str.contains('Chugach')])
+chugach_sum = pivoted_df.loc[pivoted_df['County'] == 'Chugach', 'Thousands of dollars'].sum()
+copper_river_sum = pivoted_df.loc[pivoted_df['County'] == 'Copper River', 'Thousands of dollars'].sum()
+pivoted_df.loc[pivoted_df['County'] == 'Valdez-Cordova', 'Thousands of dollars'] = int(chugach_sum) + int(copper_river_sum)
+
+# Finding the gdp of Valdez-Cordova in chained 2012 dollars
+# - Found by averaging the chained dollar index of other counties in Alaska from 2021 and dividing GDP by it.
+pivoted_df.loc[pivoted_df['County'] == 'Valdez-Cordova', 'Thousands of chained 2012 dollars'] = 1783407
+
+pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Chugach')]
+pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Copper River')]
+
+print(pivoted_df.loc[pivoted_df['Quantity index'].str.contains('NA')])
+print(pivoted_df.loc[pivoted_df['Quantity index'].isna()])
+
+#### STILL NEED TO FIGURE OUT WHAT TO DO ABOUT VALDEZ-CORDOVA QUANTITY INDEX
 
 
+#############################################################################################
+#################### Re-running counties not in merged code #################################
+
+counties_not_in_gdp = set(merged_df['County']) - set(pivoted_df['County'])
+counties_not_in_gdp = sorted(counties_not_in_gdp)
+print("Counties in merged_df but not in gdp_df:")
+for county in counties_not_in_gdp:
+    print(county)
+
+counties_not_in_merged = set(pivoted_df['County']) - set(merged_df['County'])
+counties_not_in_merged = sorted(counties_not_in_merged)
+print("Counties in gdp but not in merged (sorted alphabetically):")
+for county in counties_not_in_merged:
+    print(county)
+
+
+## Finding rows in pivoted_df with asterisks in the 'State' column
+print(pivoted_df[pivoted_df['State'].str.contains('\*')])
+edited_counties = pivoted_df[pivoted_df['State'].str.contains('\*')]
+edited_counties.head(len(edited_counties))
+
+# Using that list, finding counties that are in the merged_df/not in merged df
+ast_counties_not_in_merged = []
+for county, state in zip(edited_counties['County'], edited_counties['State'].str[:2]):
+    if (county, state) not in zip(merged_df['County'], merged_df['State']):
+        ast_counties_not_in_merged.append(county)
+print(ast_counties_not_in_merged)
+
+ast_counties_in_merged = list(set(edited_counties['County']) - set(counties_not_in_merged))
+print(ast_counties_in_merged)
+
+#############################################################################################
+
+### Cleaning from top down of above results.
+
+## Ketchikan Gateway
+print(merged_df.loc[merged_df['County'].str.contains('Ketchikan'),'County'])
+print(pivoted_df[pivoted_df['County'].str.contains('Ketchikan')])
+ketch_similar_counties = get_close_matches('Ketchikan', merged_df['County'], n=5, cutoff=0.6)
+print(ketch_similar_counties)
+print(merged_df.loc[merged_df['State'].str.contains('AK'),'County'])
+# - Ketchikan Gateway is included in Prince of Wales-Hyder Census Area in the merged_df
+
+# Added Prince of Wales-Hyder GDP 
+# -used it's chained 2012 dollars gdp and the price conversion factor caluculated earlier for Valdez-Cordova
+pivoted_df.loc[pivoted_df['County'] == 'Prince of Wales-Hyder', 'Thousands of dollars'] = 298356
+pivoted_df.loc[pivoted_df['County'] == 'Prince of Wales-Hyder', 'Thousands of dollars'] = pivoted_df.loc[pivoted_df['County']== 'Prince of Wales-Hyder', 'Thousands of dollars'].astype(int).sum() + pivoted_df.loc[pivoted_df['County'] == 'Ketchikan Gateway','Thousands of dollars'].astype(int).sum()
+pivoted_df.loc[pivoted_df['County'] == 'Prince of Wales-Hyder', 'Thousands of chained 2012 dollars'] = pivoted_df.loc[pivoted_df['County'] == 'Prince of Wales-Hyder', 'Thousands of chained 2012 dollars'].astype(int).sum() + pivoted_df.loc[pivoted_df['County'] == 'Ketchikan Gateway', 'Thousands of chained 2012 dollars'].astype(int).sum()
+pivoted_df.loc[pivoted_df['County'] == 'Prince of Wales-Hyder', 'Quantity index'] = pivoted_df.loc[pivoted_df['County'] == 'Prince of Wales-Hyder', 'Quantity index'].astype(float).sum() + pivoted_df.loc[pivoted_df['County'] == 'Ketchikan Gateway', 'Quantity index'].astype(float).sum()
+print(pivoted_df.loc[pivoted_df['County'] == 'Prince of Wales-Hyder'])
+# Dropped Ketchikan gateway from pivoted_df
+pivoted_df = pivoted_df[pivoted_df['County'] != 'Ketchikan gateway']
+
+
+## Kusilvak
+print(merged_df.loc[merged_df['County'].str.contains('Kusilvak'),'County'])
+print(pivoted_df[pivoted_df['County'].str.contains('Kusilvak')])
+kus_similar_counties = get_close_matches('Kusilvak', merged_df['County'], n=5, cutoff=0.6)
+print(kus_similar_counties)
+print(merged_df.loc[merged_df['State'].str.contains('AK'),'County'])
+print(merged_df.loc[merged_df['County'].str.contains('Hampton'),['County','State']])
+# Cannot find a Kusilvak in the merged_df, so dropping it from pivoted_df
+pivoted_df = pivoted_df[pivoted_df['County'] != 'Kusilvak']
 
 ######################
 
