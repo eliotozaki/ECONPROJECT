@@ -417,7 +417,7 @@ print(similar_counties)
 print(pivoted_df[pivoted_df['County'] == 'Skagway-Hoonah-Angoon'])
 # Dropping the row with 'Skagway-Hoonah-Angoon' in the 'County' column from gdp df (pivoted)
 pivoted_df = pivoted_df[pivoted_df['County'] != 'Skagway-Hoonah-Angoon']
-
+edited_counties = edited_counties[edited_counties['County'] != 'Skagway-Hoonah-Angoon']
 
 ## Re-running prints of different combinations of counties with/without asterisks and plusses (After removing some counties)
 counties_not_in_merged = []
@@ -442,6 +442,72 @@ for county in counties_not_in_merged:
 
 for county in similar_counties.keys():
     print(county+": "+ similar_counties[county])
+
+# Printing those that dont have plusses
+for county in similar_counties.keys():
+    if '+' not in county:
+        print(county+": "+ similar_counties[county])
+
+# Dropping Prince of Wales-Outer Ketchikan from pivoted_df
+print(merged_df.loc[merged_df['County'].str.contains('Ketchikan'),'County'])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Ketchikan')])
+pivoted_df = pivoted_df[pivoted_df['County'] != 'Prince of Wales-Outer Ketchikan']
+edited_counties = edited_counties[edited_counties['County'] != 'Prince of Wales-Outer Ketchikan']
+counties_not_in_merged = counties_not_in_merged[counties_not_in_merged != ('Prince of Wales-Outer Ketchikan')]
+similar_counties = {county: similar_counties[county] for county in similar_counties if county != 'Prince of Wales-Outer Ketchikan'}
+
+# Further cleaning
+pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Wrangell-Petersburg')]
+print(merged_df.loc[merged_df['County'].str.contains('Chugach'),'County'])
+print(merged_df.loc[merged_df['County'].str.contains('River'),['County','State']])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('River')])
+
+# Dropping Chugach and Copper River from pivoted_df (They are listed under valdez-cordova)
+pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Chugach')]
+pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Copper river')]
+edited_counties = edited_counties[~edited_counties['County'].str.contains('Chugach')]
+edited_counties = edited_counties[~edited_counties['County'].str.contains('Copper river')]
+similar_counties = {county: similar_counties[county] for county in similar_counties if county != 'Chugach' and county != 'Copper river'}
+
+# Changing wrangell to Wrangell City and Borough in pivoted df to match merged df.
+print(merged_df[merged_df['County'].str.contains('Wrangell')])
+print(pivoted_df[pivoted_df['County'].str.contains('Wrangell')])
+pivoted_df.loc[pivoted_df['County'] == 'Wrangell', 'County'] = 'Wrangell City and Borough'
+edited_counties.loc[edited_counties['County'] == 'Wrangell', 'County'] = 'Wrangell City and Borough'
+
+####### Re-running prints of different combinations of counties with/without asterisks and plusses (After removing some counties)
+counties_not_in_merged = []
+edited_counties.head(len(edited_counties))
+
+for county, state in zip(edited_counties['County'], edited_counties['State'].str[:2]):
+    if (county, state) not in zip(merged_df['County'], merged_df['State']):
+        counties_not_in_merged.append(county)
+print(counties_not_in_merged)
+counties_in_merged = list(set(edited_counties['County']) - set(counties_not_in_merged))
+print(counties_in_merged)
+
+pivoted_df.loc[pivoted_df['County'].isin(counties_in_merged), 'State'] = pivoted_df['State'].str[:2]
+print(pivoted_df[pivoted_df['State'].str.contains('\*')])
+counties_without_plus = [county for county in counties_not_in_merged if '+' not in county]
+print(counties_without_plus)
+
+similar_counties_new = {}
+# Finding similar counties with a lower cutoff
+for county in counties_not_in_merged:
+    matches = get_close_matches(county, merged_df['County'],n=2,cutoff=0.6)
+    if matches:
+        similar_counties[county] = matches[0]
+
+for county in similar_counties.keys():
+    print(county+": "+ similar_counties[county])
+
+# Printing those that dont have plusses
+for county in similar_counties.keys():
+    if '+' not in county:
+        print(county+": "+ similar_counties[county])
+
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Ketchikan'),'County'])
+
 
 
 ######################
