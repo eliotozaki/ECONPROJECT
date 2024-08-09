@@ -590,6 +590,19 @@ print(merged_df.loc[merged_df['County'].str.contains('Hampton'),['County','State
 # Cannot find a Kusilvak in the merged_df, so dropping it from pivoted_df
 pivoted_df = pivoted_df[pivoted_df['County'] != 'Kusilvak']
 
+
+## Yakutat
+print(merged_df.loc[merged_df['County'].str.contains('Yakutat'),'County'])
+print(pivoted_df[pivoted_df['County'].str.contains('Yakutat')])
+yak_similar_counties = get_close_matches('Yakutat', merged_df['County'], n=5, cutoff=0.6)
+print(yak_similar_counties)
+print(merged_df.loc[merged_df['State'].str.contains('AK'),'County'])
+print(merged_df.loc[merged_df['County'].str.contains('Hampton'),['County','State']])
+# Adding Yakutat to Hoonah-Angoon because it is most likely represented by that in the merged_df
+pivoted_df.loc[pivoted_df['County'] == 'Hoonah-Angoon', 'Thousands of dollars'] += pivoted_df.loc[pivoted_df['County'] == 'Yakutat', 'Thousands of dollars'].sum()
+pivoted_df.loc[pivoted_df['County'] == 'Hoonah-Angoon', 'Thousands of chained 2012 dollars'] += pivoted_df.loc[pivoted_df['County'] == 'Yakutat', 'Thousands of chained 2012 dollars'].sum()
+pivoted_df.loc[pivoted_df['County'] == 'Hoonah-Angoon', 'Quantity index'] += pivoted_df.loc[pivoted_df['County'] == 'Yakutat', 'Quantity index'].sum()
+pivoted_df = pivoted_df[pivoted_df['County'] != 'Yakutat']
 ######################
 
 
