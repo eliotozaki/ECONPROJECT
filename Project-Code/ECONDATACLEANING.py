@@ -603,17 +603,115 @@ pivoted_df.loc[pivoted_df['County'] == 'Hoonah-Angoon', 'Thousands of dollars'] 
 pivoted_df.loc[pivoted_df['County'] == 'Hoonah-Angoon', 'Thousands of chained 2012 dollars'] += pivoted_df.loc[pivoted_df['County'] == 'Yakutat', 'Thousands of chained 2012 dollars'].sum()
 pivoted_df.loc[pivoted_df['County'] == 'Hoonah-Angoon', 'Quantity index'] += pivoted_df.loc[pivoted_df['County'] == 'Yakutat', 'Quantity index'].sum()
 pivoted_df = pivoted_df[pivoted_df['County'] != 'Yakutat']
+
+## Maui + Kalawao
+county = 'Maui'
+print(merged_df.loc[merged_df['County'].str.contains(county)])
+print(merged_df.loc[merged_df['County'].str.contains('Kalawao')])
+print(pivoted_df[pivoted_df['County'].str.contains(county)])
+kus_similar_counties = get_close_matches(county, merged_df['County'], n=5, cutoff=0.6)
+print(kus_similar_counties)
+
+# Adding Maui and Kalawao values together in merged_df
+maui_values = merged_df.loc[merged_df['County'].str.contains('Maui')]
+kalawao_values = merged_df.loc[merged_df['County'].str.contains('Kalawao')]
+colnames = merged_df.columns.tolist()
+print(colnames)
+print(merged_df[['FIPS','County','State']])
+print(pivoted_df[['GeoFIPS','County','State']])
+print(merged_df['FIPS'].isna().sum())
+
+colnames = [col for col in colnames if col not in ['Unnamed: 0', 'State and County', 'County', 'State', 'Population', 'FIPS']]
+print(colnames)
+
+for col in colnames:
+    maui_values[col] += kalawao_values[col].sum()
+
+print(maui_values[colnames])
+print(maui_values)
+print(merged_df.loc[merged_df['County'].str.contains('Maui')])
+print(merged_df.loc[merged_df['County'].str.contains('Kalawao')])
+merged_df.loc[merged_df['County'].str.contains('Maui')] = maui_values
+merged_df = merged_df[~merged_df['County'].str.contains('Kalawao')]
+merged_df.loc[merged_df['County'].str.contains('Maui'), 'County'] = 'Maui + Kalawao'
+
+#Merging Maui and Kalawaoi in merged_df
+print(merged_df.loc[merged_df['County'].str.contains('Maui')])
+
+####
+## Trying a more efficient approach to merging the counties in merged_df
+combined_counties = [
+    'Maui + Kalawao', 'Albemarle + Charlottesville', 'Alleghany + Covington',
+    'Campbell + Lynchburg', 'Carroll + Galax', 'Frederick + Winchester',
+    'Greensville + Emporia', 'Henry + Martinsville', 'James City + Williamsburg',
+    'Montgomery + Radford', 'Pittsylvania + Danville', 'Prince George + Hopewell',
+    'Roanoke + Salem', 'Rockingham + Harrisonburg', 'Southampton + Franklin',
+    'Spotsylvania + Fredericksburg', 'Washington + Bristol', 'Wise + Norton', 
+    'York + Poquoson'
+]
+
+# Split combined counties into two separate columns
+split_counties = [item.split(' + ') for item in combined_counties]
+
+# Create a DataFrame with the split counties
+split_df = pd.DataFrame(split_counties, columns=['County1', 'County2'])
+print(split_df)
+
+# Filter the split_df to include only those rows where both counties are in merged_df
+filtered_df = split_df[
+    split_df['County1'].isin(merged_df['County']) &
+    split_df['County2'].isin(merged_df['County'])
+]
+
+# Display the filtered combinations
+print(filtered_df)
+
+# Loop through each row in filtered_df to combine the counties in merged_df
+for index, row in filtered_df.iterrows():
+    county1 = row['County1']
+    county2 = row['County2']
+    
+    print(f"Combining {county1} + {county2}")
+    
+    # Select the rows for each county
+    county1_values = merged_df.loc[merged_df['County'].str.contains(county1)]
+    county2_values = merged_df.loc[merged_df['County'].str.contains(county2)]
+    
+    # Ensure that the columns to be combined are numeric
+    colnames = [col for col in merged_df.columns if col not in ['Unnamed: 0', 'State and County', 'County', 'State', 'Population', 'FIPS']]
+    
+    # Combine the values from county2 into county1
+    for col in colnames:
+        if col in county1_values.columns and col in county2_values.columns:
+            county1_values[col] += county2_values[col].sum()
+    
+    # Update the county1 row with the combined values
+    merged_df.loc[merged_df['County'].str.contains(county1)] = county1_values
+    
+    # Remove the county2 row from merged_df
+    merged_df = merged_df[~merged_df['County'].str.contains(county2)]
+    
+    # Rename the county1 row to reflect the combined counties
+    merged_df.loc[merged_df['County'].str.contains(county1), 'County'] = f"{county1} + {county2}"
+
+# Check the final merged_df
+print(merged_df)
+
+pd.set_option('display.max_rows', None)
+print(merged_df[merged_df.isna()].sum())
+####
+
+
+
+
+
+
+
+
+
+
+
 ######################
-
-
-
-
-
-
-
-
-
-
 
 ##### Trying to add/Fix GeoFIPS Column to be unique ID for the tables.
 
