@@ -699,11 +699,77 @@ print(merged_df)
 
 pd.set_option('display.max_rows', None)
 print(merged_df[merged_df.isna()].sum())
-####
 
 
+#############################################################################################
+#################### Re-running counties not in merged code #################################
+
+counties_not_in_gdp = set(merged_df['County']) - set(pivoted_df['County'])
+counties_not_in_gdp = sorted(counties_not_in_gdp)
+print("Counties in merged_df but not in gdp_df:")
+for county in counties_not_in_gdp:
+    print(county)
+
+counties_not_in_merged = set(pivoted_df['County']) - set(merged_df['County'])
+counties_not_in_merged = sorted(counties_not_in_merged)
+print("Counties in gdp but not in merged (sorted alphabetically):")
+for county in counties_not_in_merged:
+    print(county)
 
 
+## Finding rows in pivoted_df with asterisks in the 'State' column
+print(pivoted_df[pivoted_df['State'].str.contains('\*')])
+edited_counties = pivoted_df[pivoted_df['State'].str.contains('\*')]
+edited_counties.head(len(edited_counties))
+
+# Using that list, finding counties that are in the merged_df/not in merged df
+ast_counties_not_in_merged = []
+for county, state in zip(edited_counties['County'], edited_counties['State'].str[:2]):
+    if (county, state) not in zip(merged_df['County'], merged_df['State']):
+        ast_counties_not_in_merged.append(county)
+print(ast_counties_not_in_merged)
+
+ast_counties_in_merged = list(set(edited_counties['County']) - set(counties_not_in_merged))
+print(ast_counties_in_merged)
+
+#############################################################################################
+
+## Trying to figure out the problem with Ketchikan Gateway
+print(pivoted_df.loc[pivoted_df['County'] == 'Ketchikan Gateway'])
+print(merged_df.loc[merged_df['County'] == 'Ketchikan Gateway'])
+merged_df = merged_df[~merged_df['County'].str.contains('Ketchikan Gateway')]
+print(merged_df.loc[merged_df['County'].str.contains('Ketchikan Gateway')])
+pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Ketchikan Gateway')]
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Ketchikan Gateway')])
+
+## Albermarle + Charlottseville
+print(merged_df.loc[merged_df['County'].str.contains('Albemarle')])
+print(merged_df.loc[merged_df['County'].str.contains('Charlottesville')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Albemarle')])
+# Combine Albermarle and Charlottseville in merged_df
+albermarle_values = merged_df.loc[merged_df['County'].str.contains('Albemarle')].copy()
+charlottseville_values = merged_df.loc[merged_df['County'].str.contains('Charlottesville')].copy()
+
+# Ensure that the columns to be combined are numeric
+colnames = [col for col in merged_df.columns if col not in ['Unnamed: 0', 'State and County', 'County', 'State', 'Population', 'FIPS']]
+
+# Combine the values from Charlottseville into Albermarle
+for col in colnames:
+    albermarle_values[col] =albermarle_values[col].sum()+ charlottseville_values[col].sum()
+    print(albermarle_values[col])
+
+# Update the Albermarle row with the combined values
+merged_df.loc[merged_df['County'].str.contains('Albemarle'), colnames] = albermarle_values[colnames]
+
+# Remove the Charlottseville row from merged_df
+merged_df = merged_df[~merged_df['County'].str.contains('Charlottesville')]
+
+# Rename the Albermarle row to reflect the combined counties
+merged_df.loc[merged_df['County'].str.contains('Albemarle'), 'County'] = 'Albemarle + Charlottesville'
+
+# Check the final merged_df
+print(merged_df.loc[merged_df['County'].str.contains('Albemarle')])
+print(merged_df.loc[merged_df['County'].str.contains('Charlottesville')])   
 
 
 
