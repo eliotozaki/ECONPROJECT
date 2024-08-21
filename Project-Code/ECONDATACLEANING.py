@@ -742,6 +742,7 @@ print(merged_df.loc[merged_df['County'].str.contains('Ketchikan Gateway')])
 pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Ketchikan Gateway')]
 print(pivoted_df.loc[pivoted_df['County'].str.contains('Ketchikan Gateway')])
 
+###############
 ## Albermarle + Charlottseville
 print(merged_df.loc[merged_df['County'].str.contains('Albemarle')])
 print(merged_df.loc[merged_df['County'].str.contains('Charlottesville')])
@@ -771,9 +772,65 @@ merged_df.loc[merged_df['County'].str.contains('Albemarle'), 'County'] = 'Albema
 print(merged_df.loc[merged_df['County'].str.contains('Albemarle')])
 print(merged_df.loc[merged_df['County'].str.contains('Charlottesville')])   
 
+###############
+## Campbell + Lynchburg
+print(merged_df.loc[merged_df['County'].str.contains('Campbell')])
+print(merged_df.loc[merged_df['County'].str.contains('Lynchburg')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Campbell')])
+# Combine Campbell and Lynchburg in merged_df
+campbell_values = merged_df.loc[merged_df['County'].str.contains('Campbell') & merged_df['State'].str.contains('VA')].copy()
+lynchburg_values = merged_df.loc[merged_df['County'].str.contains('Lynchburg')].copy()
 
+# Ensure that the columns to be combined are numeric
+colnames = [col for col in merged_df.columns if col not in ['Unnamed: 0', 'State and County', 'County', 'State', 'Population', 'FIPS']]
 
+# Combine the values from Lynchburg into Campbell
+for col in colnames:
+    campbell_values[col] = campbell_values[col].sum() + lynchburg_values[col].sum()
+    print(campbell_values[col])
 
+# Update the Campbell row with the combined values
+merged_df.loc[merged_df['County'].str.contains('Campbell') & merged_df['State'].str.contains('VA'), colnames] = campbell_values[colnames]
+
+# Remove the Lynchburg row from merged_df
+merged_df = merged_df[~merged_df['County'].str.contains('Lynchburg')]
+
+# Rename the Campbell row to reflect the combined counties
+merged_df.loc[merged_df['County'].str.contains('Campbell') & merged_df['State'].str.contains('VA'), 'County'] = 'Campbell + Lynchburg'
+
+# Check the final merged_df
+print(merged_df.loc[merged_df['County'].str.contains('Campbell')])
+print(merged_df.loc[merged_df['County'].str.contains('Lynchburg')])   
+
+########## 
+## Carroll + Galax
+print(merged_df.loc[merged_df['County'].str.contains('Carroll')])
+print(merged_df.loc[merged_df['County'].str.contains('Galax')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Carroll')])
+# Combine Carroll and Galax in merged_df
+carroll_values = merged_df.loc[merged_df['County'].str.contains('Carroll')& merged_df['State'].str.contains('VA')].copy()
+galax_values = merged_df.loc[merged_df['County'].str.contains('Galax')].copy()
+
+# Ensure that the columns to be combined are numeric
+colnames = [col for col in merged_df.columns if col not in ['Unnamed: 0', 'State and County', 'County', 'State', 'Population', 'FIPS']]
+
+# Combine the values from Galax into Carroll
+for col in colnames:
+    carroll_values[col] = carroll_values[col].sum() + galax_values[col].sum()
+    print(carroll_values[col])
+
+# Update the Carroll row with the combined values
+merged_df.loc[merged_df['County'].str.contains('Carroll')& merged_df['State'].str.contains('VA'), colnames] = carroll_values[colnames]
+
+# Remove the Galax row from merged_df
+merged_df = merged_df[~merged_df['County'].str.contains('Galax')]
+
+# Rename the Carroll row to reflect the combined counties
+merged_df.loc[merged_df['County'].str.contains('Carroll')& merged_df['State'].str.contains('VA'), 'County'] = 'Carroll + Galax'
+
+# Check the final merged_df
+print(merged_df.loc[merged_df['County'].str.contains('Carroll')])
+print(merged_df.loc[merged_df['County'].str.contains('Galax')])   
 
 
 
