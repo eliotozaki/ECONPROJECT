@@ -1258,10 +1258,35 @@ merged_df['State and County'] = merged_df['State'] + ' ' + merged_df['County']
 pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
 
 merged_df[['State and County', 'State', 'County']].head(20)
-pivoted_df[['State and County', 'State', 'County']].head(20)
+pivoted_df[['State and County', 'State', 'County']].head(25)
 
 
 ######################################################################################
+
+
+### Creating a new stopping place
+# Exporting the cleaned datasets
+merged_df.to_csv("AllData-MergedDS.csv")
+pivoted_df.to_csv("PivotedData-Cleaned.csv")
+
+
+### Part 2: Data Cleaning/Merging of GDP Dataset
+
+#Cleaning More Datasets
+import pandas as pd
+import numpy as np 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import calmap
+#from pandas_profiling import ProfileReport
+
+## Cleaning
+# Load the datasets
+population_df = pd.read_csv("Cleaned-Datasets\POPULATIONDATA-Cleaned.csv")
+emissions_df = pd.read_csv("Cleaned-Datasets/EMISSIONSDATA-Cleaned.csv")
+merged_df = pd.read_csv("AllData-MergedDS.csv")
+pivoted_df = pd.read_csv("PivotedData-Cleaned.csv")
+
 
 
 ## Checking which State and County values are in respective dfs and not in other.
@@ -1277,29 +1302,62 @@ print("Counties in gdp but not in merged (sorted alphabetically):")
 for county in counties_not_in_merged:
     print(county)
 
-print(merged_df.loc[merged_df['State and County'].str.contains('Franklin')])
-print(pivoted_df.loc[pivoted_df['State and County'].str.contains('Franklin')])
+#print(merged_df.loc[merged_df['State and County'].str.contains('Franklin')])
+#print(pivoted_df.loc[pivoted_df['State and County'].str.contains('Franklin')])
 
+print(merged_df.loc[merged_df['County'].str.contains('Anchorage')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Anchorage')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Anchorage'), 'County'] = 'Anchorage'
+pivoted_df.loc[pivoted_df['State and County'].str.contains('Anchorage'), 'State and County'] = 'AK Anchorage'
 
+similar_counties_new = {}
+# Finding similar counties with a lower cutoff
+for county in counties_not_in_merged:
+    matches = get_close_matches(county, merged_df['State and County'], n=2, cutoff=0.8)
+    if matches:
+        similar_counties_new[county] = matches[0]
+print(similar_counties_new)
 
+### Counties to edit: IN Lagrange, MO Ste Genevieve, NM Dona Ana, TX Eastland
+print(merged_df.loc[merged_df['County'].str.contains('LaGrange')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Lagrange'), 'County'] = 'LaGrange'
+print(pivoted_df.loc[pivoted_df['County'].str.contains('LaGrange')])
 
+print(merged_df.loc[merged_df['County'].str.contains('Ste Genevieve')])
+merged_df.loc[merged_df['County'].str.contains('Ste Genevieve'), 'County'] = 'Ste. Genevieve'
 
+print(pivoted_df.loc[pivoted_df['County'].str.contains('a Ana')])
+pivoted_df.loc[pivoted_df['County'].str.contains('a Ana'), 'County'] = 'Dona Ana'
 
+print(merged_df.loc[merged_df['County'].str.contains('Eastland')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Eland')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Eland'), 'County'] = 'Eastland'
 
+# Making the State and County Columns for both dataframes
+merged_df['State and County'] = merged_df['State'] + ' ' + merged_df['County']
+pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
 
+print(merged_df[['State and County', 'State', 'County']].head(20))
+print(pivoted_df[['State and County', 'State', 'County']].head(25))
 
+## Finding counties that are similar between counties not in merged and counties not in gdp
+similar_counties_new = {}
+# Finding similar counties with a lower cutoff
+for county in counties_not_in_merged:
+    matches = get_close_matches(county, counties_not_in_gdp, n=2, cutoff=0.5)
+    if matches:
+        similar_counties_new[county] = matches[0]
+print(similar_counties_new)
 
+## Carson City
+print(merged_df.loc[merged_df['County'].str.contains('Carson City')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Carson City')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Carson City'), 'County'] = 'Carson City'
 
-
-
-
-
-
-
-
-
-
-
+## Fremont
+print(merged_df.loc[merged_df['County'].str.contains('Fremont')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Fremont')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Fremont')& pivoted_df['State'].str.contains('ID'), 'County'] = 'Fremont'
 
 
 
