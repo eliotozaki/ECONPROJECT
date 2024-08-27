@@ -1261,7 +1261,6 @@ merged_df[['State and County', 'State', 'County']].head(20)
 pivoted_df[['State and County', 'State', 'County']].head(25)
 
 
-######################################################################################
 
 
 ### Creating a new stopping place
@@ -1269,6 +1268,7 @@ pivoted_df[['State and County', 'State', 'County']].head(25)
 merged_df.to_csv("AllData-MergedDS.csv")
 pivoted_df.to_csv("PivotedData-Cleaned.csv")
 
+######################################################################################
 
 ### New Stopping place/Starting place
 #Cleaning More Datasets
@@ -1457,16 +1457,35 @@ print("Counties in gdp but not in merged (sorted alphabetically):")
 for county in counties_not_in_merged:
     print(county)
 
+merged_AK = merged_df.loc[merged_df['State'].str.contains('AK')]
+pivoted_AK = pivoted_df.loc[pivoted_df['State'].str.contains('AK')]
+print(len(merged_AK))
+print(len(pivoted_AK))
+
+for county in pivoted_AK['State and County']:
+    if county in merged_AK['State and County']:
+        print(county)
+    else:
+        print("NOT IN MERGED: ", county)
 
 
+for county in merged_AK['State and County']:
+    print(county)
 
+for county in pivoted_AK:
+    print(county)
 
+pivoted_AK.head(len(pivoted_AK))
+merged_AK.head(len(merged_AK))
 
+## There is missing data from Carbon emissions in the merged_df's Alaska data. This should be mitigated in the ds by some merging of measurements from those unnacounted counties into the accounted counties.
+## Solution would then be to delete the rows in Alaska for unnacounted counties in merged_df, 
 
+pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('AK') & ~pivoted_df['County'].isin(merged_AK['County']))]
 
+## Dealing with the rest of the counties not in merged
 
-
-
+print(merged_df.loc[merged_df['County'].str.contains('Hartford')])
 
 
 
