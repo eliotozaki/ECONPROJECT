@@ -13,8 +13,8 @@ import calmap
 from pandas_profiling import ProfileReport
 
 ## Load the datasets
-population_df = pd.read_csv("C:/Users\eliot/OneDrive/Desktop/ECONPROJECT/Cleaned-Datasets/POPULATIONDATA-Cleaned.csv")
-emissions_df = pd.read_csv("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Base-Datasets/COUNTY_EMISSIONS2021.csv")
+population_df = pd.read_csv("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Cleaned-Datasets/POPULATIONDATA-Cleaned.csv")
+emissions_df = pd.read_csv("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Cleaned-Datasets/EMISSIONSDATA-Cleaned.csv")
 
 ##Create a dictionary of state names and their initials
 state_initials = {
@@ -101,8 +101,10 @@ for initial in initials:
 
 # Import both as new dataframes
 population_df = pd.read_csv("C:/Users\eliot/OneDrive/Desktop/ECONPROJECT/Cleaned-Datasets/POPULATIONDATA-Cleaned.csv")
-emissions_df = pd.read_csv("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Base-Datasets/COUNTY_EMISSIONS2021.csv")
+emissions_df = pd.read_csv("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Cleaned-Datasets/EMISSIONSDATA-Cleaned.csv")
 
+population_df.head(100)
+emissions_df.head(100)
 # Group by 'State' and count the number of unique counties
 emissions_counties = emissions_df.groupby('State')['County'].nunique().reset_index(name='Emissions_Counties')
 population_counties = population_df.groupby('State')['County'].nunique().reset_index(name='Population_Counties')
@@ -145,20 +147,96 @@ for state in states_with_differences:
 print(len(population_df))
 print(len(emissions_df))
 
+emissions_df.columns
+population_df.columns
+population_df.head(10)
+population_df.drop(['State and County'], axis=1, inplace=True)
+population_df.drop(['Unnamed: 0'], axis=1, inplace=True)
+emissions_df.drop(['Unnamed: 0'], axis=1, inplace=True)
+
+
+
+# Making a unique identifier column for both datasets (State and County)
+population_df['County'] = population_df['County'].str.rstrip()
+emissions_df['County'] = emissions_df['County'].str.rstrip()
+population_df['State'] = population_df['State'].str.rstrip()
+emissions_df['State'] = emissions_df['State'].str.rstrip()
+
+###
+population_df['State and County'] = population_df['State'] + ' ' + population_df['County']
+emissions_df['State and County'] = emissions_df['State'] + ' ' + emissions_df['County']
+
+population_df.head(20)
+emissions_df.head(20)
+
 # Setting index to 'County' for both datasets
-emissions_df.set_index("County")
-population_df.set_index("County")
+emissions_df.set_index("State and County")
+population_df.set_index("State and County")
+
+print(emissions_df.loc[emissions_df['County'].str.contains('Vald')])
+print(population_df.loc[population_df['County'].str.contains('Vald')])
 
 # Merging the datasets
+
 df = pd.merge(population_df,emissions_df)
 
 df.describe()
 df.columns
+df.head(10)
+
+df.set_index("State and County")
+
+print(df.loc[df['County'].str.contains('Vald')])
+
+print(merged_df.loc(merged_df['County'].str.contains('Vald')))
+print(population_df.loc[population_df['County'].str.contains('Vald')])
+print(emissions_df.loc[emissions_df['County'].str.contains('Vald')])
+print(df.loc[df['County'].str.contains('Vald')])
 
 # Exporting the cleaned datasets
 population_df.to_csv("POPULATIONDATA-Cleaned.csv")
 emissions_df.to_csv("EMISSIONSDATA-Cleaned.csv")
 df.to_csv("AllData-MergedDS.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -243,6 +321,9 @@ with open("Cleaned-Datasets\County-MSA-GDP-DATA.csv", 'rb') as rawdata:
     result = chardet.detect(rawdata.read(100000))
 result
 
+merged_df.head(10)
+print(merged_df.loc[merged_df['County'].str.contains('Vald')])
+
 # Load the GDP dataset
 gdp_df = pd.read_csv("Cleaned-Datasets\County-MSA-GDP-DATA.csv",encoding="Windows-1252")
 
@@ -276,7 +357,6 @@ gdp_df['GeoName'] = gdp_df['GeoName'].str.replace('East', 'E')
 gdp_df['GeoName'] = gdp_df['GeoName'].str.replace('Census Area', '')
 gdp_df['GeoName'] = gdp_df['GeoName'].str.replace('City and Borough', '')
 gdp_df['GeoName'] = gdp_df['GeoName'].str.replace('Borough', '')
-gdp_df.loc[gdp_df['GeoName'] =='LaSalle', 'GeoName'] = 'La Salle'
 
 #Doing some checks on specific values
 print(gdp_df.loc[gdp_df['GeoName'].str.contains('Emporia'),'GeoName'])
@@ -512,6 +592,8 @@ print(merged_df.loc[merged_df['County'].str.contains('Valdez')|merged_df['County
 chugach_sum = pivoted_df.loc[pivoted_df['County'] == 'Chugach', 'Thousands of dollars'].sum()
 copper_river_sum = pivoted_df.loc[pivoted_df['County'] == 'Copper River', 'Thousands of dollars'].sum()
 pivoted_df.loc[pivoted_df['County'] == 'Valdez-Cordova', 'Thousands of dollars'] = int(chugach_sum) + int(copper_river_sum)
+## Have to set Valdez-Cordova quantity index to 0 as it is NA for all three above counties
+pivoted_df.loc[pivoted_df['County'] == 'Valdez-Cordova', 'Quantity index'] = 0
 
 # Finding the gdp of Valdez-Cordova in chained 2012 dollars
 # - Found by averaging the chained dollar index of other counties in Alaska from 2021 and dividing GDP by it.
@@ -520,7 +602,6 @@ pivoted_df.loc[pivoted_df['County'] == 'Valdez-Cordova', 'Thousands of chained 2
 pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Chugach')]
 pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Copper River')]
 
-print(pivoted_df.loc[pivoted_df['Quantity index'].str.contains('NA')])
 print(pivoted_df.loc[pivoted_df['Quantity index'].isna()])
 
 #### STILL NEED TO FIGURE OUT WHAT TO DO ABOUT VALDEZ-CORDOVA QUANTITY INDEX
@@ -644,7 +725,7 @@ print(merged_df.loc[merged_df['County'].str.contains('Kalawao')])
 
 
 ######## Now doing the rest, which are all in VA
-combined_counties = combined_counties[2:]
+combined_counties = combined_counties[7:]
 print(combined_counties['County'])
 
 
@@ -1240,7 +1321,7 @@ print(pivoted_df['State'].unique())
 
 
 # Find counties and states from pivoted_df where the state value is not in the state values of merged_df
-unique_states = pivoted_df.loc[~pivoted_df['State'].isin(merged_df['State']), ['County', 'State']]
+unique_states = pivoted_df.loc[~(pivoted_df['State'].isin(merged_df['State']))& ~(pivoted_df['State'].str.contains('AK')), ['County', 'State']]
 print(unique_states)
 print(pivoted_df.loc[pivoted_df['County'].isin(unique_states['State'])])
 print(merged_df.loc[merged_df['County'].isin(unique_states['State'])])
@@ -1265,8 +1346,8 @@ pivoted_df[['State and County', 'State', 'County']].head(25)
 
 ### Creating a new stopping place
 # Exporting the cleaned datasets
-merged_df.to_csv("AllData-MergedDS.csv")
-pivoted_df.to_csv("PivotedData-Cleaned.csv")
+#merged_df.to_csv("AllData-MergedDS.csv")
+#pivoted_df.to_csv("PivotedData-Cleaned.csv")
 
 ######################################################################################
 
@@ -1483,11 +1564,26 @@ merged_AK.head(len(merged_AK))
 
 pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('AK') & ~pivoted_df['County'].isin(merged_AK['County']))]
 
-## Dealing with the rest of the counties not in merged
+## Same problem with CT Counties in pivoted: Tolland, Hartford, and Litchfield are not included in Merged, which means they are probably included under
+## the other 5 counties in CT. Thus, removing them from pivoted_df
 
-print(merged_df.loc[merged_df['County'].str.contains('Hartford')])
+pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('CT') & pivoted_df['County'].isin(['Tolland', 'Hartford', 'Litchfield']))]
 
+### Finishing the rest of those counties:
+#Lasalle
+print(merged_df.loc[merged_df['County'].str.contains('Salle')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Salle')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Salle'), 'County'] = 'La Salle'
 
+# DeKalb
+print(merged_df.loc[merged_df['County'].str.contains('DeKalb')])
+print(merged_df.loc[merged_df['State'].str.contains('IN')])
+print(merged_df.loc[merged_df['County'].str.contains('De')& merged_df['State'].str.contains('IN')])
+# Dekalb not likely to be merged with another county, probably omitted; thus have to omit in pivoted
+pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('IN') & pivoted_df['County'].str.contains('DeKalb'))]
+
+merged_df['State and County'] = merged_df['State'] + ' ' + merged_df['County']
+pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
 
 ##########################################################################################################
 ##### Trying to add/Fix GeoFIPS Column to be unique ID for the tables.
