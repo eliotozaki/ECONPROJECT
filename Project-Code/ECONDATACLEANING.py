@@ -176,6 +176,54 @@ population_df.set_index("State and County")
 print(emissions_df.loc[emissions_df['County'].str.contains('Vald')])
 print(population_df.loc[population_df['County'].str.contains('Vald')])
 
+
+counties_not_in_merged = set(population_df['State and County']) - set(emissions_df['State and County'])
+print("Counties in population_df but not in emissions:")
+for county in counties_not_in_merged:
+    print(county)
+
+print(population_df.loc[population_df['State and County'].str.contains('Salle')])
+print(merged_df.loc[merged_df['State and County'].str.contains('Salle')])
+print(emissions_df.loc[emissions_df['State and County'].str.contains('Salle')])
+
+emissions_df.loc[emissions_df['State and County'].str.contains('IL La Salle'), 'County'] = 'LaSalle'
+population_df['State and County'] = population_df['State'] + ' ' + population_df['County']
+emissions_df['State and County'] = emissions_df['State'] + ' ' + emissions_df['County']
+
+print(emissions_df.loc[emissions_df['County'].str.contains('Claiborne')])
+print(population_df.loc[population_df['County'].str.contains('Claiborne')])
+
+print(len(population_df[population_df['State'] == 'LA']))
+print(len(emissions_df[population_df['State']=='LA'] ))
+for county in emissions_df.loc[emissions_df['State'].str.contains('LA'),'State and County']:
+    print(county)
+
+counties_not_in_emissions = set(emissions_df['State and County']) - set(population_df['State and County'])
+print("Counties in emissions but not in population:")
+for county in counties_not_in_emissions:
+    print(county)
+
+print(emissions_df.loc[emissions_df['State and County'].str.contains('LaSalle')])
+print(population_df.loc[population_df['State and County'].str.contains('LaSalle')])
+
+emissions_df.loc[emissions_df['State and County'].str.contains('LA LaSalle'), 'County'] = 'Claiborne'
+
+population_df['State and County'] = population_df['State'] + ' ' + population_df['County']
+emissions_df['State and County'] = emissions_df['State'] + ' ' + emissions_df['County']
+
+counties_not_in_merged = set(population_df['State and County']) - set(emissions_df['State and County'])
+print("Counties in population_df but not in emissions:")
+for county in counties_not_in_merged:
+    print(county)
+
+counties_not_in_emissions = set(emissions_df['State and County']) - set(population_df['State and County'])
+print("Counties in emissions but not in population:")
+for county in counties_not_in_emissions:
+    print(county)
+
+emissions_df.set_index("State and County")
+population_df.set_index("State and County")
+
 # Merging the datasets
 
 df = pd.merge(population_df,emissions_df)
@@ -252,74 +300,13 @@ import calmap
 
 ## Cleaning
 # Load the datasets
-population_df = pd.read_csv("Cleaned-Datasets\POPULATIONDATA-Cleaned.csv")
-emissions_df = pd.read_csv("Cleaned-Datasets/EMISSIONSDATA-Cleaned.csv")
+population_df = pd.read_csv("POPULATIONDATA-Cleaned.csv")
+emissions_df = pd.read_csv("EMISSIONSDATA-Cleaned.csv")
 merged_df = pd.read_csv("AllData-MergedDS.csv")
 
-# Reit. dictionary of state names and their initials
-state_initials = {
-    'Alabama': 'AL',
-    'Alaska': 'AK',
-    'Arizona': 'AZ',
-    'Arkansas': 'AR',
-    'California': 'CA',
-    'Colorado': 'CO',
-    'Connecticut': 'CT',
-    'Delaware': 'DE',
-    'Florida': 'FL',
-    'Georgia': 'GA',
-    'Hawaii': 'HI',
-    'Idaho': 'ID',
-    'Illinois': 'IL',
-    'Indiana': 'IN',
-    'Iowa': 'IA',
-    'Kansas': 'KS',
-    'Kentucky': 'KY',
-    'Louisiana': 'LA',
-    'Maine': 'ME',
-    'Maryland': 'MD',
-    'Massachusetts': 'MA',
-    'Michigan': 'MI',
-    'Minnesota': 'MN',
-    'Mississippi': 'MS',
-    'Missouri': 'MO',
-    'Montana': 'MT',
-    'Nebraska': 'NE',
-    'Nevada': 'NV',
-    'New Hampshire': 'NH',
-    'New Jersey': 'NJ',
-    'New Mexico': 'NM',
-    'New York': 'NY',
-    'North Carolina': 'NC',
-    'North Dakota': 'ND',
-    'Ohio': 'OH',
-    'Oklahoma': 'OK',
-    'Oregon': 'OR',
-    'Pennsylvania': 'PA',
-    'Rhode Island': 'RI',
-    'South Carolina': 'SC',
-    'South Dakota': 'SD',
-    'Tennessee': 'TN',
-    'Texas': 'TX',
-    'Utah': 'UT',
-    'Vermont': 'VT',
-    'Virginia': 'VA',
-    'Washington': 'WA',
-    'West Virginia': 'WV',
-    'Wisconsin': 'WI',
-    'Wyoming': 'WY'
-}
-print(state_initials['California'])  # Output: CA
-
-# More reit.
-states = list(state_initials.keys())
-initials = list(state_initials.values())
-
-# Trying to load gdp dataset
-import chardet
-with open("Cleaned-Datasets\County-MSA-GDP-DATA.csv", 'rb') as rawdata:
-    result = chardet.detect(rawdata.read(100000))
-result
+merged_df.set_index("State and County")
+population_df.set_index("State and County")
+emissions_df.set_index("State and County")
 
 merged_df.head(10)
 print(merged_df.loc[merged_df['County'].str.contains('Vald')])
@@ -339,15 +326,6 @@ gdp_df = gdp_df[~gdp_df['GeoName'].isin(states + ['United States'])]
 # Check gdp df length
 print(len(gdp_df)/3)
 
-# Check differences from gdp and merged datasets
-counties_not_in_gdp = set(merged_df['County'].str.split(',').str[0]) - set(gdp_df['GeoName'].str.split(',').str[0])
-print("Counties in merged_df but not in gdp_df:")
-for county in counties_not_in_gdp:
-    print(county)
-counties_not_in_merged = set(gdp_df['GeoName'].str.split(',').str[0]) - set(merged_df['County'].str.split(',').str[0])
-print("Counties in gdp but not in merged:")
-for county in counties_not_in_merged:
-    print(county)
 
 ## Cleaning the GDP dataset
 gdp_df.loc[gdp_df['GeoName'].str.contains(r' \(Independent City\)', regex=True), 'GeoName'] = \
@@ -367,11 +345,14 @@ print(merged_df.loc[merged_df['County'].str.contains('Rocky Mountain'),'County']
 #Setting Index of gdp df
 gdp_df.set_index("GeoName")
 
-
+gdp_df.columns
 
 ## Pivoting the GDP dataset
 
 pivoted_df = gdp_df.pivot_table(index=['GeoName', 'GeoFIPS'], columns='Unit', values='GDP(Thousands)', aggfunc='first')
+
+pivoted_df.head()
+
 
 # Flatten the column MultiIndex, if necessary
 pivoted_df.columns = [col for col in pivoted_df.columns]
@@ -383,51 +364,86 @@ print(pivoted_df)
 # Separate GeoName into County and State columns
 pivoted_df[['County', 'State']] = pivoted_df['GeoName'].str.split(', ', expand=True).iloc[:, [0, 1]]
 pivoted_df['County'] = pivoted_df['County'].str.rstrip()
+pivoted_df['State'] = pivoted_df['State'].str.rstrip()
+
 pivoted_df.head(10)
 pivoted_df.shape
-pivoted_df.set_index("County")
-pivoted_df.sort_values(["State", "County"], inplace=True)
-merged_df.sort_values(["State", "County"], inplace=True)
+
+pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
+pivoted_df.set_index("State and County")
+
+
+pivoted_df.sort_index()
+
+pivoted_df.set_index("State and County",inplace=True)
 merged_df.columns
+pivoted_df.index
 
 # looking at merged and pivoted dfs.
 merged_df[['County','State']].head(10)
 pivoted_df[['County','State']].head(10)
 
-## Finding differences between pivoted and merged dataset
-pivoted_counties = pivoted_df.groupby('State')['County'].nunique().reset_index(name='Pivoted_Counties')
-merged_counties = merged_df.groupby('State')['County'].nunique().reset_index(name='Merged_Counties')
+counties_not_in_merged = set(merged_df['State and County']) - set(pivoted_df['State and County'])
+print("Counties in emissions but not in population:")
+for county in counties_not_in_emissions:
+    print(county)
 
-# Merge the results on 'State'
-merged_counts_df = pd.merge(pivoted_counties, merged_counties, on='State', how='outer')
+counties_not_in_pivoted = set(pivoted_df['State and County']) - set(merged_df['State and County'])
+print("Counties in emissions but not in population:")
+for county in counties_not_in_emissions:
+    print(county)
 
-# Fill NaN values with 0 (if any state is missing in one of the datasets)
-merged_counts_df.fillna(0, inplace=True)
+for state in merged_df['State'].unique():
+    print("State: ", state)
+    print(len(merged_df[merged_df['State']==state]))
 
-# Convert to integers (since counts should be integers)
-merged_counts_df['Pivoted_Counties'] = merged_counts_df['Pivoted_Counties'].astype(int)
-merged_counts_df['Merged_Counties'] = merged_counts_df['Merged_Counties'].astype(int)
+print(pivoted_df.loc[pivoted_df['State'].isna()])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('District of Columbia')])
+print(merged_df.loc[merged_df['County'].str.contains('District of Columbia')])
 
-# Compare the results
-merged_counts_df['Difference'] = merged_counts_df['Pivoted_Counties'] - merged_counts_df['Merged_Counties']
+# Removing NA rows and doing more specific cleaning
+pivoted_df = pivoted_df[~(pivoted_df['State'].isna())]
 
-# Display the result
-print(merged_counts_df)
-print(merged_counts_df[merged_counts_df['Difference'] != 0])
-print(merged_counts_df['Pivoted_Counties'][merged_counts_df['State'] == 'DE'])
-print(merged_df['County'][merged_df['State'] == 'DE'])
 
-# Printing states with differences in number of counties
-states_with_differences = merged_counts_df['State'][merged_counts_df['Difference'] != 0].tolist()
-print(states_with_differences)
 
-## Removing NA rows and doing more specific cleaning
-na_rows = pivoted_df[pivoted_df['State'].isna()]
-print(na_rows)
-nostate_counties = na_rows['County'].unique()
-print(merged_df[merged_df['County'].isin(nostate_counties)][['County', 'State']])
-pivoted_df.loc[pivoted_df['County']=="District of Columbia", 'State'] = 'DC'
-pivoted_df = pivoted_df.dropna(subset=['State'])
+
+
+
+# ## Finding differences between pivoted and merged dataset
+# pivoted_counties = pivoted_df.groupby('State')['County'].nunique().reset_index(name='Pivoted_Counties')
+# merged_counties = merged_df.groupby('State')['County'].nunique().reset_index(name='Merged_Counties')
+
+# # Merge the results on 'State'
+# merged_counts_df = pd.merge(pivoted_counties, merged_counties, on='State', how='outer')
+
+# # Fill NaN values with 0 (if any state is missing in one of the datasets)
+# merged_counts_df.fillna(0, inplace=True)
+
+# # Convert to integers (since counts should be integers)
+# merged_counts_df['Pivoted_Counties'] = merged_counts_df['Pivoted_Counties'].astype(int)
+# merged_counts_df['Merged_Counties'] = merged_counts_df['Merged_Counties'].astype(int)
+
+# # Compare the results
+# merged_counts_df['Difference'] = merged_counts_df['Pivoted_Counties'] - merged_counts_df['Merged_Counties']
+
+# # Display the result
+# print(merged_counts_df)
+
+# print(merged_counts_df[merged_counts_df['Difference'] != 0])
+# print(merged_counts_df['Pivoted_Counties'][merged_counts_df['State'] == 'DE'])
+# print(merged_df['County'][merged_df['State'] == 'DE'])
+
+# # Printing states with differences in number of counties
+# states_with_differences = merged_counts_df['State'][merged_counts_df['Difference'] != 0].tolist()
+# print(states_with_differences)
+
+# ## Removing NA rows and doing more specific cleaning
+# na_rows = pivoted_df[pivoted_df['State'].isna()]
+# print(na_rows)
+# nostate_counties = na_rows['County'].unique()
+# print(merged_df[merged_df['County'].isin(nostate_counties)][['County', 'State']])
+#pivoted_df.loc[pivoted_df['County']=="District of Columbia", 'State'] = 'DC'
+#pivoted_df = pivoted_df.dropna(subset=['State'])
 pivoted_df.loc[pivoted_df['County'].str.startswith('West '), 'County'] = pivoted_df['County'].str.replace('West', 'W')
 
 # Removing the spaces from the end of counties who end in spaces.
@@ -438,9 +454,9 @@ for county in merged_df['County']:
 
 #######CANNOT RUN YET, NEED TO ELIM NAS IN PIVOTED_DF
 # Printing rows with NA values in pivoted_df
-pivoted_df = pivoted_df.dropna()
-#counties_with_asterisk = pivoted_df[pivoted_df['State'].str.contains('\*')][['County', 'State']]
-#print(counties_with_asterisk)
+#pivoted_df = pivoted_df.dropna()
+counties_with_asterisk = pivoted_df[pivoted_df['State'].str.contains('\*')][['County', 'State']]
+print(counties_with_asterisk)
 
 ## Checking what counties are in one df but not the other
 # ** IMPORTANT 
@@ -1310,6 +1326,8 @@ for county in ast_counties_in_merged:
     pivoted_df.loc[pivoted_df['County'] == county, 'State'] = pivoted_df.loc[pivoted_df['County'] == county, 'State'].str.rstrip('*')
 print(pivoted_df.loc[pivoted_df['State'].str.contains('\*')])
 
+
+
 # Editing Alutians West
 pivoted_df.loc[pivoted_df['County'].str.contains('Aleutians E'), 'County'] = 'Aleutians East'
 
@@ -1341,8 +1359,8 @@ pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County'
 merged_df[['State and County', 'State', 'County']].head(20)
 pivoted_df[['State and County', 'State', 'County']].head(25)
 
-
-
+merged_df.set_index('State and County')
+pivoted_df.set_index('State and County')
 
 ### Creating a new stopping place
 # Exporting the cleaned datasets
