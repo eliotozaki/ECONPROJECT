@@ -467,15 +467,272 @@ for county in similar_counties.keys():
         print(county+": "+ similar_counties[county])
 
 # Dropping Prince of Wales-Outer Ketchikan from pivoted_df
-print(merged_df.loc[merged_df['County'].str.contains('Ketchikan'),'County'])
+print(merged_df.loc[merged_df['County'].str.contains('Ketchikan')])
 print(pivoted_df.loc[pivoted_df['County'].str.contains('Ketchikan')])
 pivoted_df = pivoted_df[pivoted_df['County'] != 'Prince of Wales-Outer Ketchikan']
 edited_counties = edited_counties[edited_counties['County'] != 'Prince of Wales-Outer Ketchikan']
 counties_not_in_merged = counties_not_in_merged[counties_not_in_merged != ('Prince of Wales-Outer Ketchikan')]
 similar_counties = {county: similar_counties[county] for county in similar_counties if county != 'Prince of Wales-Outer Ketchikan'}
 
-# Further cleaning
+## Further cleaning
+
+#- Dealing with Valdez-Cordova, by combining the values of Chugach and Copper River
 pivoted_df = pivoted_df[~pivoted_df['County'].str.contains('Wrangell-Petersburg')]
 print(merged_df.loc[merged_df['County'].str.contains('Chugach'),'County'])
 print(merged_df.loc[merged_df['County'].str.contains('River'),['County','State']])
 print(pivoted_df.loc[pivoted_df['County'].str.contains('River')])
+
+print(merged_df.loc[merged_df['State and County'].str.contains('Vald') ])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Vald')])
+
+pivoted_df[['Quantity index', 'Thousands of chained 2012 dollars', 'Thousands of dollars']] = pivoted_df[['Quantity index', 'Thousands of chained 2012 dollars', 'Thousands of dollars']].replace('(NA)', 0)
+
+colnames = ['Quantity index', 'Thousands of chained 2012 dollars', 'Thousands of dollars']
+vald_counties = ['Chugach','Copper River']
+for c in vald_counties:
+    for col in colnames:
+        pivoted_df.loc[pivoted_df['County'].str.contains('Valdez-Cordova'), col] = int(pivoted_df.loc[pivoted_df['County'].str.contains('Valdez-Cordova'), col]) + int(pivoted_df.loc[pivoted_df['County'].str.contains(c), col])
+
+print(type(pivoted_df.loc[pivoted_df['County'].str.contains('Valdez-Cordova'), 'Quantity index']))
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Valdez-Cordova')])
+
+pivoted_df = pivoted_df[~(pivoted_df['County'].isin(vald_counties))]
+
+# Finding the gdp of Valdez-Cordova in chained 2012 dollars
+# - Found by averaging the chained dollar index of other counties in Alaska from 2021 and dividing GDP by it.
+pivoted_df.loc[pivoted_df['County'] == 'Valdez-Cordova', 'Thousands of chained 2012 dollars'] = 1783407
+
+##
+# Changing wrangell to Wrangell City and Borough in pivoted df to match merged df.
+print(merged_df[merged_df['County'].str.contains('Wrangell')])
+print(pivoted_df[pivoted_df['County'].str.contains('Wrangell')])
+pivoted_df.loc[pivoted_df['County'] == 'Wrangell', 'County'] = 'Wrangell City and Borough'
+edited_counties.loc[edited_counties['County'] == 'Wrangell', 'County'] = 'Wrangell City and Borough'
+
+# Updating the 'State and County' column in merged_df
+merged_df['State and County'] = merged_df['State'] + ' ' + merged_df['County']
+
+# Updating the 'State and County' column in pivoted_df
+pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
+
+#############################################################################################
+#################### Re-running counties not in merged code #################################
+
+counties_not_in_gdp = set(merged_df['County']) - set(pivoted_df['County'])
+counties_not_in_gdp = sorted(counties_not_in_gdp)
+print("Counties in merged_df but not in gdp_df:")
+for county in counties_not_in_gdp:
+    print(county)
+
+counties_not_in_merged = set(pivoted_df['County']) - set(merged_df['County'])
+counties_not_in_merged = sorted(counties_not_in_merged)
+print("Counties in gdp but not in merged (sorted alphabetically):")
+for county in counties_not_in_merged:
+    print(county)
+
+
+
+## Finding rows in pivoted_df with asterisks in the 'State' column
+print(pivoted_df[pivoted_df['State'].str.contains('\*')])
+edited_counties = pivoted_df[pivoted_df['State'].str.contains('\*')]
+edited_counties.head(len(edited_counties))
+edited_counties.sort_index()
+
+# Using that list, finding counties that are in the merged_df/not in merged df
+ast_counties_not_in_merged = []
+for county, state in zip(edited_counties['County'], edited_counties['State'].str[:2]):
+    if (county, state) not in zip(merged_df['County'], merged_df['State']):
+        ast_counties_not_in_merged.append(county)
+print(ast_counties_not_in_merged)
+
+ast_counties_in_merged = list(set(edited_counties['County']) - set(counties_not_in_merged))
+print(ast_counties_in_merged)
+#############################################################################################
+
+combined_counties = pivoted_df.loc[pivoted_df['State'].str.endswith('*'), ['County', 'State']]
+print(combined_counties)
+
+pivoted_df = pivoted_df.sort_index()
+pivoted_df.head()
+
+############
+## Doing Maui + Kalawao first
+
+print(merged_df.loc[merged_df['County'].str.contains('Maui')])
+print(merged_df.loc[merged_df['County'].str.contains('Kalawao')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Maui')])
+
+
+maui_values = merged_df.loc[merged_df['County'].str.contains('Maui')].copy()
+kalawao_values = merged_df.loc[merged_df['County'].str.contains('Kalawao')].copy()
+
+# Ensure that the columns to be combined are numeric
+colnames = [col for col in merged_df.columns if col not in ['Unnamed: 0', 'State and County', 'County', 'State', 'Population', 'FIPS']]
+
+# Combine the values from Kalawao into Maui
+for col in colnames:
+    maui_values[col] = maui_values[col].sum() + kalawao_values[col].sum()
+
+# Update the Maui row with the combined values
+merged_df.loc[merged_df['County'].str.contains('Maui'), colnames] = maui_values[colnames]
+
+# Remove the Kalawao row from merged_df
+merged_df = merged_df[~merged_df['County'].str.contains('Kalawao')]
+
+# Rename the Maui row to reflect the combined counties
+merged_df.loc[merged_df['County'].str.contains('Maui'), 'County'] = 'Maui + Kalawao'
+
+# Check the final merged_dfunty2 = row['County2']
+print(merged_df.loc[merged_df['County'].str.contains('Maui')])
+print(merged_df.loc[merged_df['County'].str.contains('Kalawao')])
+
+
+
+######## Now doing the rest, which are all in VA
+combined_counties = combined_counties[2:]
+print(combined_counties['County'])
+
+
+for county in combined_counties['County']:
+    county1, county2 = county.split(' + ')
+    print(f"Combining {county1} + {county2}")
+    
+    county1_values = merged_df.loc[merged_df['County'].str.contains(county1)& merged_df['State'].str.contains('VA')].copy()
+    county2_values = merged_df.loc[merged_df['County'].str.contains(county2) & merged_df['State'].str.contains('VA')].copy()
+    
+    for col in colnames:
+        if col in county1_values.columns and col in county2_values.columns:
+            county1_values[col] += county2_values[col].sum()
+    
+    merged_df.loc[merged_df['County'].str.contains(county1)& merged_df['State'].str.contains('VA') ] = county1_values
+    merged_df = merged_df[~(merged_df['County'].str.contains(county2)& merged_df['State'].str.contains('VA'))]
+    merged_df.loc[merged_df['County'].str.contains(county1)& merged_df['State'].str.contains('VA'), 'County'] = f"{county1} + {county2}"
+    print(merged_df.loc[merged_df['County'].str.contains(county2)])
+
+
+###########################################################################################
+## Final checks for combined counties in pivoted_df that arent in merged_df
+
+counties_not_in_gdp = set(merged_df['County']) - set(pivoted_df['County'])
+counties_not_in_gdp = sorted(counties_not_in_gdp)
+print("Counties in merged_df but not in gdp_df:")
+for county in counties_not_in_gdp:
+    print(county)
+
+counties_not_in_merged = set(pivoted_df['County']) - set(merged_df['County'])
+counties_not_in_merged = sorted(counties_not_in_merged)
+print("Counties in gdp but not in merged (sorted alphabetically):")
+for county in counties_not_in_merged:
+    print(county)
+
+## Finding rows in pivoted_df with asterisks in the 'State' column
+print(pivoted_df[pivoted_df['State'].str.contains('\*')])
+edited_counties = pivoted_df[pivoted_df['State'].str.contains('\*')]
+edited_counties.head(len(edited_counties))
+
+# Using that list, finding counties that are in the merged_df/not in merged df
+ast_counties_not_in_merged = []
+for county, state in zip(edited_counties['County'], edited_counties['State'].str[:2]):
+    if (county, state) not in zip(merged_df['County'], merged_df['State']):
+        ast_counties_not_in_merged.append(county)
+print(ast_counties_not_in_merged)
+
+ast_counties_in_merged = list(set(edited_counties['County']) - set(counties_not_in_merged))
+print(ast_counties_in_merged)
+for county in ast_counties_in_merged:
+    merged_df.loc[merged_df['County'] == county, 'State'] = merged_df.loc[merged_df['County'] == county, 'State'].str.rstrip('*')
+
+
+for county in ast_counties_in_merged:
+    pivoted_df.loc[pivoted_df['County'] == county, 'State'] = pivoted_df.loc[pivoted_df['County'] == county, 'State'].str.rstrip('*')
+print(pivoted_df.loc[pivoted_df['State'].str.contains('\*')])
+
+# Editing Alutians East
+pivoted_df.loc[pivoted_df['County'].str.contains('Aleutians E'), 'County'] = 'Aleutians East'
+
+
+print(merged_df.columns)
+print(pivoted_df['State'].unique())
+
+# Find counties and states from pivoted_df where the state value is not in the state values of merged_df
+unique_states = pivoted_df.loc[~(pivoted_df['State'].isin(merged_df['State']))& ~(pivoted_df['State'].str.contains('AK')), ['County', 'State']]
+print(unique_states)
+print(pivoted_df.loc[pivoted_df['County'].isin(unique_states['State'])])
+print(merged_df.loc[merged_df['County'].isin(unique_states['State'])])
+print(merged_df.loc[merged_df['County'].isin(unique_states['County']), ['County','State']])
+# All are from VA, so changing the state to VA
+pivoted_df.loc[pivoted_df['State'].isin(unique_states['State']), 'State'] = 'VA'
+
+# Checking to make sure no counties in either ds have spaces at the end of counties (mould mess with merge)
+counties_with_trailing_space = merged_df.loc[merged_df['County'].str.endswith(' ')]
+print(counties_with_trailing_space['County'])
+counties_with_trailing_space = pivoted_df.loc[pivoted_df['County'].str.endswith(' ')]
+print(counties_with_trailing_space['County'])
+
+# Updating State and County columns
+merged_df['State and County'] = merged_df['State'] + ' ' + merged_df['County']
+pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
+
+
+#############################################################################################
+## More checks
+
+
+## Checking which State and County values are in respective dfs and not in other.
+counties_not_in_gdp = set(merged_df['State and County']) - set(pivoted_df['State and County'])
+counties_not_in_gdp = sorted(counties_not_in_gdp)
+print("Counties in merged_df but not in gdp_df:")
+for county in counties_not_in_gdp:
+    print(county)
+
+counties_not_in_merged = set(pivoted_df['State and County']) - set(merged_df['State and County'])
+counties_not_in_merged = sorted(counties_not_in_merged)
+print("Counties in gdp but not in merged (sorted alphabetically):")
+for county in counties_not_in_merged:
+    print(county)
+
+
+#############################################################################################
+
+# Changing Anchorage to match in both datasets
+print(merged_df.loc[merged_df['County'].str.contains('Anchorage')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Anchorage')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Anchorage'), 'County'] = 'Anchorage'
+pivoted_df.loc[pivoted_df['State and County'].str.contains('Anchorage'), 'State and County'] = 'AK Anchorage'
+
+
+### Counties to edit: IN Lagrange, MO Ste Genevieve, NM Dona Ana, TX Eastland
+print(merged_df.loc[merged_df['County'].str.contains('LaGrange')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Lagrange'), 'County'] = 'LaGrange'
+print(pivoted_df.loc[pivoted_df['County'].str.contains('LaGrange')])
+
+print(merged_df.loc[merged_df['County'].str.contains('Ste Genevieve')])
+merged_df.loc[merged_df['County'].str.contains('Ste Genevieve'), 'County'] = 'Ste. Genevieve'
+
+print(pivoted_df.loc[pivoted_df['County'].str.contains('a Ana')])
+pivoted_df.loc[pivoted_df['County'].str.contains('a Ana'), 'County'] = 'Dona Ana'
+
+print(merged_df.loc[merged_df['County'].str.contains('Eastland')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Eland')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Eland'), 'County'] = 'Eastland'
+
+
+
+## Carson City
+print(merged_df.loc[merged_df['County'].str.contains('Carson City')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Carson City')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Carson City'), 'County'] = 'Carson City'
+
+## Fremont
+print(merged_df.loc[merged_df['County'].str.contains('Fremont')])
+print(pivoted_df.loc[pivoted_df['County'].str.contains('Fremont')])
+pivoted_df.loc[pivoted_df['County'].str.contains('Fremont')& pivoted_df['State'].str.contains('ID'), 'County'] = 'Fremont'
+
+
+
+# Making the State and County Columns for both dataframes
+merged_df['State and County'] = merged_df['State'] + ' ' + merged_df['County']
+pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
+
+print(merged_df[['State and County', 'State', 'County']].head(20))
+print(pivoted_df[['State and County', 'State', 'County']].head(25))

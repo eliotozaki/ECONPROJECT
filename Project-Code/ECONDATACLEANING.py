@@ -1332,7 +1332,6 @@ print(pivoted_df.loc[pivoted_df['State'].str.contains('\*')])
 pivoted_df.loc[pivoted_df['County'].str.contains('Aleutians E'), 'County'] = 'Aleutians East'
 
 ###########################################################################################
-
 ## Making unique identifier columns: GeoFIPS and making a useable "State and County" column 
 print(merged_df.columns)
 print(pivoted_df['State'].unique())
