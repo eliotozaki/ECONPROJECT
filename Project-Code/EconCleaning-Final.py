@@ -333,12 +333,12 @@ pivoted_df.head(10)
 pivoted_df.shape
 
 pivoted_df['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
-pivoted_df.set_index("State and County", inplace=True)
 
+pivoted_df.sort_values(by='State and County', inplace=True)
 
-pivoted_df.sort_index()
 merged_df.columns
 pivoted_df.index
+merged_df.reset_index(inplace=True)
 
 # looking at merged and pivoted dfs.
 merged_df[['County','State']].head(10)
@@ -1001,7 +1001,7 @@ print(len(pivoted_df.loc[pivoted_df['State'].str.contains('CT')]))
 ## - Hartford, Litchfield, and Tolland are all major counties in CT; not likely to be merged with another county. Thus, can only 
 ##   assume they were left out for some reason. Thus, have to omit in pivoted
 
-pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('CT') & pivoted_df['County'].isin(['Tolland', 'Hartford', 'Litchfield']))]
+pivoted_df = pivoted_df[~(pivoted_df['State'].str.contains('CT') & pivoted_df['County'].isin(['Tolland', 'Hartford', 'Litchfield']))]
 
 ### Finishing the rest of those counties:
 #LaSalle
@@ -1011,14 +1011,14 @@ pivoted_df.loc[pivoted_df['County'].str.contains('Salle'), 'County'] = 'La Salle
 print(len(merged_df.loc[merged_df['State'].str.contains('LA')]))
 print(len(pivoted_df.loc[pivoted_df['State'].str.contains('LA')]))
 # LaSalle not likely to be merged with another county, probably omitted; thus have to omit in pivoted
-pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('LA') & pivoted_df['County'].str.contains('LaSalle'))]
+pivoted_df = pivoted_df[~(pivoted_df['State'].str.contains('LA') & pivoted_df['County'].str.contains('LaSalle'))]
 
 # DeKalb
 print(merged_df.loc[merged_df['County'].str.contains('DeKalb')])
 print(merged_df.loc[merged_df['State'].str.contains('IN')])
 print(merged_df.loc[merged_df['County'].str.contains('De')& merged_df['State'].str.contains('IN')])
 # Dekalb not likely to be merged with another county, probably omitted; thus have to omit in pivoted
-pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('IN') & pivoted_df['County'].str.contains('DeKalb'))]
+pivoted_df = pivoted_df[~(pivoted_df['State'].str.contains('IN') & pivoted_df['County'].str.contains('DeKalb'))]
 
 # Garfield
 print(merged_df.loc[merged_df['County'].str.contains('Garfield')])
@@ -1026,7 +1026,7 @@ print(merged_df.loc[merged_df['State'].str.contains('MT')])
 print(merged_df.loc[merged_df['County'].str.contains('Garfield')& merged_df['State'].str.contains('MT')])
 print(pivoted_df.loc[pivoted_df['County'].str.contains('Garfield')])
 # Garfield not likely to be merged with another county, probably omitted; thus have to omit in pivoted
-pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('MT') & pivoted_df['County'].str.contains('Garfield'))]
+pivoted_df = pivoted_df[~(pivoted_df['State'].str.contains('MT') & pivoted_df['County'].str.contains('Garfield'))]
 
 # LaSalle, LA
 print(merged_df.loc[merged_df['County'].str.contains('La Salle')])
@@ -1038,7 +1038,7 @@ pivoted_df.loc[pivoted_df['County'].str.contains('La Salle') & pivoted_df['State
 print(len(merged_df.loc[merged_df['State'].str.contains('LA')]))
 print(len(pivoted_df.loc[pivoted_df['State'].str.contains('LA')]))
 # LaSalle not likely to be merged with another county, probably omitted; thus have to omit in pivoted
-pivoted_df = pivoted_df[~(pivoted_df['State and County'].str.contains('LA') & pivoted_df['County'].str.contains('La Salle'))]
+pivoted_df = pivoted_df[~(pivoted_df['State'].str.contains('LA') & pivoted_df['County'].str.contains('La Salle'))]
 
 # Franklin
 print(merged_df.loc[merged_df['County'].str.contains('Franklin')])
@@ -1048,9 +1048,11 @@ print(len(pivoted_df.loc[pivoted_df['State'].str.contains('VA')]))
 print(pivoted_df.loc[pivoted_df['County'].str.contains('Southampton')])
 print(merged_df.loc[merged_df['County'].str.contains('Southampton')])
 
-pivoted_df.set_index('State and County', inplace=True)
-merged_df.set_index('State and County', inplace=True)  
+merged_df.loc['State and County'] = merged_df['State'] + ' ' + merged_df['County']
+pivoted_df.loc['State and County'] = pivoted_df['State'] + ' ' + pivoted_df['County']
 
+pivoted_df.sort_values(by='State and County', inplace=True) 
+merged_df.sort_values(by='State and County', inplace=True)
 
 
 
@@ -1069,4 +1071,13 @@ print("Counties in gdp but not in merged (sorted alphabetically):")
 for county in counties_not_in_merged:
     print(county)
 
+pivoted_df.columns
 
+gdp_merged = pd.merge(merged_df, pivoted_df, on='State and County', how='outer')
+
+print(len(merged_df))
+print(len(pivoted_df))
+print(len(gdp_merged))
+gdp_merged.columns
+
+gdp_merged.to_csv('gdp_merged.csv', index=False)
