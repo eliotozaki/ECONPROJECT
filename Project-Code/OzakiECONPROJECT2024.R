@@ -27,17 +27,9 @@ library(dplyr)
 
 tf$constant("Hello Tensorflow!")
 
+data = fread("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/gdp_merged.csv")
+data = data[, !('Unnamed: 0')]
 
-# Import data:
-DATA = numeric(0)
-DATA$Description = "all data"
-DATA$EmissionsData = fread("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Base-Datasets/COUNTY_EMISSIONS2021.csv")
-DATA$PopulationData = fread("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/Cleaned-Datasets/POPULATIONDATA-Cleaned.csv")
 
-#Troubleshooting
-print(setdiff(DATA$PopulationData$County,DATA$EmissionsData$County))
-print(setdiff(DATA$EmissionsData$County,DATA$PopulationData$County))
-print(dim(DATA$EmissionsData))
-print(dim(DATA$PopulationData))
 
 
