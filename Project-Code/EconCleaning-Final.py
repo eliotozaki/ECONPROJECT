@@ -1071,6 +1071,12 @@ gdp_merged.columns
 
 gdp_merged.to_csv('gdp_merged.csv', index=False)
 
+#######################
+# New Stopping place
+
+
+
+
 df = pd.read_csv('gdp_merged.csv')
 print(df.columns)
 print(df.isna().sum())
