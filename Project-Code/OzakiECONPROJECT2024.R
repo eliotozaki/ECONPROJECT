@@ -344,3 +344,9 @@ for (i in 1:length(sigmodels)) {
 
 print(mse)
 
+
+######
+## Looking at tax data alongside income data
+
+
+
