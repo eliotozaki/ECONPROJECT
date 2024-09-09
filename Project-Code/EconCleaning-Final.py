@@ -2629,3 +2629,135 @@ merged_df.drop(columns=['County_x','State_x'], inplace=True)
 
 merged_df = pd.merge(merged_df, pivoted_df, on='State and County', how='outer')
 merged_df.to_csv('gdp_merged.csv', index=False)
+
+
+
+
+################################
+## Cleaning Tax Data
+
+merged_df = pd.read_csv('gdp_merged.csv')
+
+gdp_df = pd.read_csv('Cleaned-Datasets/21incyallagi.csv', encoding='windows-1252')
+
+gdp_df.describe()
+print(len(gdp_df))
+
+
+## Inital Cleaning
+
+##Create a dictionary of state names and their initials
+state_initials = {
+    'Alabama': 'AL',
+    'Alaska': 'AK',
+    'Arizona': 'AZ',
+    'Arkansas': 'AR',
+    'California': 'CA',
+    'Colorado': 'CO',
+    'Connecticut': 'CT',
+    'Delaware': 'DE',
+    'Florida': 'FL',
+    'Georgia': 'GA',
+    'Hawaii': 'HI',
+    'Idaho': 'ID',
+    'Illinois': 'IL',
+    'Indiana': 'IN',
+    'Iowa': 'IA',
+    'Kansas': 'KS',
+    'Kentucky': 'KY',
+    'Louisiana': 'LA',
+    'Maine': 'ME',
+    'Maryland': 'MD',
+    'Massachusetts': 'MA',
+    'Michigan': 'MI',
+    'Minnesota': 'MN',
+    'Mississippi': 'MS',
+    'Missouri': 'MO',
+    'Montana': 'MT',
+    'Nebraska': 'NE',
+    'Nevada': 'NV',
+    'New Hampshire': 'NH',
+    'New Jersey': 'NJ',
+    'New Mexico': 'NM',
+    'New York': 'NY',
+    'North Carolina': 'NC',
+    'North Dakota': 'ND',
+    'Ohio': 'OH',
+    'Oklahoma': 'OK',
+    'Oregon': 'OR',
+    'Pennsylvania': 'PA',
+    'Rhode Island': 'RI',
+    'South Carolina': 'SC',
+    'South Dakota': 'SD',
+    'Tennessee': 'TN',
+    'Texas': 'TX',
+    'Utah': 'UT',
+    'Vermont': 'VT',
+    'Virginia': 'VA',
+    'Washington': 'WA',
+    'West Virginia': 'WV',
+    'Wisconsin': 'WI',
+    'Wyoming': 'WY'
+}
+print(state_initials['California'])  # Output: CA
+
+
+
+## Using the dictionary
+states = list(state_initials.keys())
+initials = list(state_initials.values())
+gdp_df.tail(20)
+gdp_df.head(20)
+
+# Remove rows with Geoname of United States and any aggregated state rows.
+gdp_df = gdp_df[~gdp_df['COUNTYNAME'].isin(states + ['United States *', 'Far West' , 'Great Lakes', 'Mideast', 'New England', 'Plains', 'Rocky Mountain', 'Southeast', 'Southwest'])]
+
+print(len(gdp_df)/8)
+for column in gdp_df.columns:
+    print(column)
+
+gdp_df['State and County'] = gdp_df['STATE'] + ' ' + gdp_df['COUNTYNAME']
+gdp_df.sort_values(by='State and County', inplace=True)
+gdp_df.head(20)
+
+
+# Assuming gdp_df is your DataFrame
+columns_to_sum = [
+    'N1', 'mars1', 'MARS2', 'MARS4', 'ELF', 'CPREP', 'PREP', 'DIR_DEP', 'VRTCRIND', 'N2', 
+    'TOTAL_VITA', 'VITA', 'TCE', 'VITA_EIC', 'RAC', 'ELDERLY', 'A00100', 'N02650', 'A02650', 
+    'N00200', 'A00200', 'N00300', 'A00300', 'N00600', 'A00600', 'N00650', 'A00650', 'N00700', 
+    'A00700', 'N00900', 'A00900', 'N01000', 'A01000', 'N01400', 'A01400', 'N01700', 'A01700', 
+    'SCHF', 'N02300', 'A02300', 'N02500', 'A02500', 'N26270', 'A26270', 'N02900', 'A02900', 
+    'N03220', 'A03220', 'N03300', 'A03300', 'N03270', 'A03270', 'N03150', 'A03150', 'N03210', 
+    'A03210', 'N02910', 'A02910', 'N04450', 'A04450', 'N04100', 'A04100', 'N04200', 'A04200', 
+    'N04470', 'A04470', 'A00101', 'N17000', 'A17000', 'N18425', 'A18425', 'N18450', 'A18450', 
+    'N18500', 'A18500', 'N18800', 'A18800', 'N18460', 'A18460', 'N18300', 'A18300', 'N19300', 
+    'A19300', 'N19500', 'A19500', 'N19530', 'A19530', 'N19550', 'A19550', 'N19570', 'A19570', 
+    'N19700', 'A19700', 'N20950', 'A20950', 'N04475', 'A04475', 'N04800', 'A04800', 'N05800', 
+    'A05800', 'N09600', 'A09600', 'N05780', 'A05780', 'N07100', 'A07100', 'N07300', 'A07300', 
+    'N07180', 'A07180', 'N07230', 'A07230', 'N07240', 'A07240', 'N07225', 'A07225', 'N07260', 
+    'A07260', 'N09400', 'A09400', 'N85770', 'A85770', 'N85775', 'A85775', 'N10600', 'A10600', 
+    'N59660', 'A59660', 'N59720', 'A59720', 'N11070', 'A11070', 'N10960', 'A10960', 'N11560', 
+    'A11560', 'N11450', 'A11450', 'N11520', 'A11520', 'N11530', 'A11530', 'N10970', 'A10970', 
+    'N10971', 'A10971', 'N06500', 'A06500', 'N10300', 'A10300', 'N85530', 'A85530', 'N85300', 
+    'A85300', 'N11901', 'A11901', 'N11900', 'A11900', 'N11902', 'A11902', 'N12000', 'A12000'
+]
+
+# Group by the specified columns and sum the specified columns
+pivoted_df = gdp_df.groupby(['State and County','STATEFIPS', 'STATE', 'COUNTYFIPS', 'COUNTYNAME'])[columns_to_sum].sum().reset_index()
+
+pivoted_df.head()
+print(len(pivoted_df))
+
+pivoted_df['COUNTYNAME'] = pivoted_df['COUNTYNAME'].str.replace(' County$', '', regex=True)
+pivoted_df.head(50)
+
+for i in range(1, 7):
+    pivoted_df['COUNTYNAME'] = pivoted_df['COUNTYNAME'].str.replace(f"{' Borough'[:i]}$", '', regex=True)
+
+print(merged_df.loc[merged_df['State and County'].str.contains('Borough')])
+pivoted_df.loc[pivoted_df['COUNTYNAME'].str.contains('Wrangell City and'), 'COUNTYNAME'] = 'Wrangell City and Borough'
+
+print(merged_df.loc[merged_df['State and County'].str.contains('Sitka')])
+
+pivoted_df['COUNTYNAME'] = pivoted_df['COUNTYNAME'].str.replace(" City and$", '', regex=True)
