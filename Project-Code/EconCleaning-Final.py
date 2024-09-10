@@ -2856,7 +2856,20 @@ pivoted_df['COUNTYNAME'] = pivoted_df['COUNTYNAME'].str.replace('^West ', 'W ', 
 # Display the updated DataFrame
 print(pivoted_df.head())
 
-city_of_counties = ['City of Buena Vista', 'City of Colonial Heights', 'City of Fairfax', 'City of Falls Church', 'City of Lexington', 'City of Manassas Park','City of Manassas', 'City of Petersburg', 'City of Staunton', 'City of Waynesboro','VA City of Fredericksburg','VA City of Roanoke','VA City of Franklin', 'VA City of Alexandria', 'VA City of Chesapeake', 'VA City of Hampton', 'VA City of Newport News', 'VA City of Norfolk', 'VA City of Portsmouth', 'VA City of Richmond', 'VA City of Roanoke', 'VA City of Suffolk', 'MD City of Baltimore', 'MO City of St. Louis', 'VA City of Virginia Beach']
+#VA Colonial Heights
+#VA Manassas
+
+print(merged_df.loc[merged_df['State and County'].str.contains('VA Colonial Heights')])
+print(pivoted_df.loc[pivoted_df['State and County'].str.contains('VA Colonial Heights')])
+print(pivoted_df.loc[pivoted_df['COUNTYNAME'].str.contains('Manassas')])
+
+## Doing Colonial Heights and Manassas separately
+pivoted_df.loc[pivoted_df['COUNTYNAME'].str.contains('Colonial Heights'), 'COUNTYNAME'] = 'City of Colonial Heights'
+pivoted_df.loc[pivoted_df['COUNTYNAME'].str.contains('Manassas')& ~pivoted_df['COUNTYNAME'].str.contains('Park'), 'COUNTYNAME'] = 'City of Manassas'
+
+
+city_of_counties = ['VA City of Buena Vista', 'VA City of Fairfax', 'VA City of Falls Church', 'VA City of Lexington', 'VA City of Manassas Park', 'VA City of Petersburg', 'VA City of Staunton', 'VA City of Waynesboro','VA City of Fredericksburg','VA City of Roanoke','VA City of Franklin', 'VA City of Alexandria', 'VA City of Chesapeake', 'VA City of Hampton', 'VA City of Newport News', 'VA City of Norfolk', 'VA City of Portsmouth', 'VA City of Richmond', 'VA City of Roanoke', 'VA City of Suffolk', 'MD City of Baltimore', 'MO City of St. Louis', 'VA City of Virginia Beach']
+
 for c in city_of_counties:
     # Find rows that match the condition
     matching_rows = pivoted_df.loc[pivoted_df['State and County'].str.contains(c[:2] + c[10:]) & pivoted_df['COUNTYNAME'].str.contains('city'), 'COUNTYNAME']
@@ -2866,6 +2879,8 @@ for c in city_of_counties:
         pcounty = matching_rows.values[0]
         pcounty2 = pcounty.replace(' city', '')
         pcounty2 = "City of " + pcounty2
+        
+        # Update the COUNTYNAME column where the conditions are met
         pivoted_df.loc[pivoted_df['COUNTYNAME'].str.contains(pcounty) & pivoted_df['COUNTYNAME'].str.contains('city'), 'COUNTYNAME'] = pcounty2
 
 
@@ -3229,7 +3244,7 @@ equivalent_counties = [
 ]
 
 # Iterate over each county in equivalent_counties
-for county in equivalent_counties:
+for county in set(equivalent_counties):
     # Define the new row with the specified values
     new_row = {
         'County': county,
@@ -3365,19 +3380,17 @@ for county in counties_not_in_merged:
 ## Need to do last edits for counties:
 ## - CT Hartford
 ## - CT Litchfield
-## - CT Tolland
 ## - IN DeKalb
 ## - LA LaSalle
 ## - MT Garfield
-## - VA City of Roanoke
-## - VA Franklin
+
 
 # Hartford/CT Counties:
 ## might need to remove Hartford, Litchfield, Tolland from pivoted_df
 ## - Hartford, Litchfield, and Tolland are all major counties in CT; not likely to be merged with another county. Thus, can only 
 ##   assume they were left out for some reason. Thus, have to omit in pivoted
 
-pivoted_df = pivoted_df[~(pivoted_df['State'].str.contains('CT') & pivoted_df['County'].isin(['Tolland', 'Hartford', 'Litchfield']))]
+pivoted_df = pivoted_df[~(pivoted_df['State'].str.contains('CT') & pivoted_df['County'].isin(['Hartford', 'Litchfield']))]
 
 ### Finishing the rest of those counties:
 
@@ -3396,5 +3409,30 @@ pivoted_df = pivoted_df[~(pivoted_df['State'].str.contains('MT') & pivoted_df['C
 
 print(merged_df[merged_df.isna().any(axis=1)])
 print(pivoted_df[pivoted_df.isna().any(axis=1)])
+
+
+print(len(merged_df))
+print(len(pivoted_df))
+
+duplicates = pivoted_df[pivoted_df.duplicated(keep=False)]
+print(duplicates)
+
+pivoted_df.sort_values(by='State and County', inplace=True)
+print(pivoted_df)
+print(merged_df)
+
+# Ensure both DataFrames are sorted by 'State and County' for accurate comparison
+pivoted_df.sort_values(by='State and County', inplace=True)
+merged_df.sort_values(by='State and County', inplace=True)
+
+pivoted_df = pivoted_df.drop_duplicates(subset=['State and County'], keep='first')
+
+print(len(merged_df))
+print(len(pivoted_df))
+
+merged_result = pd.merge(merged_df, pivoted_df, on='State and County', how='inner')
+print(len(merged_result))
+
+merged_result.to_csv('AllData-MergedDS.csv', index=False)
 
 
