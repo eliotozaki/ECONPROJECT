@@ -1943,7 +1943,7 @@ library(dplyr)
 tf$constant("Hello Tensorflow!")
 
 
-df = fread("C:/Users/eliot/OneDrive/Desktop/ECONPROJECT/ALLData-MergedDS.csv")
+df = fread("C:/Users/eliot/OneDrive/Documents/GitHub/ECONPROJECT/AllData-MergedDS.csv")
 print(colnames(df))
 
 print(df[, c('Finance and insurance _x', 'Finance and insurance _y')])
@@ -1986,18 +1986,22 @@ pop_emissions_vars <- grep(pop_emissions_pattern, colnames(pop_numeric_df), valu
 pop_numeric_df_no_emissions <- pop_numeric_df[, !colnames(pop_numeric_df) %in% pop_emissions_vars, with = FALSE]
 pop_numeric_df_no_emissions = pop_numeric_df_no_emissions[,!colnames(pop_numeric_df_no_emissions) %in% c('Unnamed: 0', 'FIPS', 'STATEFIPS'), with = FALSE]
 
+# Change the column names in per_capita_data to inclued _per_capita
 for (response_var in pop_emissions_vars) {
   per_capita_data[[paste0(response_var, "_per_capita")]] <- per_capita_data[[response_var]] / df$Population
 }
 
+# Finding the numeric columns in the per capita data/making numeric df
 numeric_cols <- sapply(per_capita_data, is.numeric)
 numeric_df <- per_capita_data[, numeric_cols, with = FALSE]
+
 
 print(colnames(pop_numeric_df_no_emissions))
 set.seed(123)
 ntest = floor(nrow(per_capita_data) / 4)  # 1/3 of data is test
 testid = sample(1:nrow(per_capita_data), ntest)  # indices of test obs
 
+# Making train/test sets
 pop_testset = per_capita_data[testid, ]
 pop_trainset = per_capita_data[-testid, ]
 pop_linear_mse = list()
@@ -2067,10 +2071,61 @@ for (t in thresholds) {
 ## Linear Regressions
 pop_linear_regression_results <- list()
 pop_glm_regression_results <- list()
+pop_linear_regression_models <- list()
+pop_glm_regression_models <- list()
+
+library(randomForest)
+rf_models = list()
 
 
+for (i in 1:length(pop_emissions_vars)) {
+  response_var <- pop_emissions_vars[i]
+  response_var_per_capita <- paste0(response_var, "_per_capita")
+  print(response_var_per_capita)
+  
+  # Check if the response variable exists in the trainset
+  if (!response_var_per_capita %in% colnames(pop_trainset)) {
+    warning(paste("Response variable", response_var_per_capita, "not found in trainset. Skipping this variable."))
+    next
+  }
+  
+  # Prepare data for the randomForest function
+  response <- pop_trainset[[response_var_per_capita]]
+  predictors <- pop_trainset[, new_numcols, with = FALSE]  # ensure 'with = FALSE' for data.table or convert to a dataframe if necessary
+  
+  # Check if any NA values in response or predictors and handle them
+  if (any(is.na(response)) | any(sapply(predictors, anyNA))) {
+    warning(paste("NA values found in data for", response_var_per_capita, "Skipping this variable."))
+    next
+  }
+  
+  # Fit the random forest model
+  tryCatch({
+    rf <- randomForest(x = predictors, y = response, importance = TRUE, ntree = 100)
+    rf_models[[response_var_per_capita]] <- rf
+  }, error = function(e) {
+    warning(paste("Failed to fit Random Forest for", response_var_per_capita, "Error:", e$message))
+  })
+}
 
-# Remove leading/trailing whitespace from column names
+# Optionally, check the summary of one of the models
+if (length(rf_models) > 0) {
+  print(summary(rf_models[[1]]))  # Adjust index as needed to check different models
+}
+
+importance(rf_models[[2]])
+
+rf_preds = list()
+rf_mse = list()
+for (i in 1:length(rf_models)) {
+  model = rf_models[[i]]
+  rf_preds[[i]] = predict(model, pop_testset[, new_numcols, with = FALSE])
+  rf_mse[[i]] = mean((rf_preds[[i]] - pop_testset[[response_var_per_capita]])^2)
+  
+}
+print(rf_mse)
+
+
 
 for (i in 1:length(pop_emissions_vars)) {
   response_var <- pop_emissions_vars[i]
@@ -2089,14 +2144,7 @@ for (i in 1:length(pop_emissions_vars)) {
   # Fit the regression model
   pop_linear_regression_model <- lm(formula, data = pop_trainset)
   pop_glm_regression_model <- glm(formula, data = pop_trainset)
-  
-  # Check VIF and handle aliased coefficients
-  #vif_values <- vif(pop_linear_regression_model)
-  #if (any(is.infinite(vif_values))) {
-  #  warning("Aliased coefficients found; consider adjusting the model.")
-  #  next  # Skip to the next variable
-  #}
-  
+
   # Calculate MSE and store results
   actual = pop_testset[[response_var_per_capita]]
   pop_linear_preds = predict(pop_linear_regression_model, pop_testset)
@@ -2104,18 +2152,37 @@ for (i in 1:length(pop_emissions_vars)) {
   pop_glm_preds = predict(pop_glm_regression_model, pop_testset)
   pop_glm_mse[[response_var_per_capita]] <- mean((pop_glm_preds - actual)^2)
   
-  # Store the regression model results
+  # Store the regression model results and models
   pop_linear_regression_results[[response_var_per_capita]] <- summary(pop_linear_regression_model)
   pop_glm_regression_results[[response_var_per_capita]] <- summary(pop_glm_regression_model)
+  pop_linear_regression_models[[response_var_per_capita]] <- pop_linear_regression_model
+  pop_glm_regression_models[[response_var_per_capita]] <- pop_glm_regression_model
 }
 
+sig_rsquared_vars = list()
+sig_rsquared_models = list()
 
-for (result in pop_linear_regression_results) {
-  print(result$r.squared)  # Print each regression result
+for (i in seq_along(pop_emissions_vars)) {
+  response_var = pop_emissions_vars[i]
+  result = pop_linear_regression_results[[i]]  # Use double square brackets for safer list extraction
+  model = pop_linear_regression_models[[i]]
+  if (!is.null(result)) {
+    rsquared <- result$r.squared  # Extract the R-squared value
+    print(rsquared)  # Print each R-squared value
+    # Check if the R-squared value is valid and significant
+    if (!is.na(rsquared) && rsquared > 0.1) {
+      sig_rsquared_vars[[response_var]] <- rsquared
+      sig_rsquared_models[[response_var]] <- model
+    }
+  } else {
+    print(paste("No result available for:", response_var))
+  }
 }
+print(names(sig_rsquared_models))
+#print(sig_rsquared_models)
 
 for (result in pop_glm_regression_results) {
-  print(result)  # Print each regression result
+  #print(result)  # Print each regression result
 }
 
 # Convert the list to a numeric vector
@@ -2140,7 +2207,7 @@ for (result in pop_linear_regression_results) {
 }
 
 for (result in pop_glm_regression_results) {
-  print(result)  # Print each regression result
+  #print(result$)  # Print each regression result
 }
 
 # Convert the list to a numeric vector
@@ -2169,4 +2236,182 @@ pop_mean_glm_mse <- mean(pop_glm_mse_vector_no_last, na.rm = TRUE)
 print(paste("Mean Linear MSE (excluding last entry):", pop_mean_linear_mse))
 print(paste("Mean GLM MSE (excluding last entry):", pop_mean_glm_mse))
 
-## Much easier to look at
+
+#sorting pop_mean_linear_mse_vector_no_last
+print(sort(pop_linear_mse_vector_no_last))
+print(pop_linear_mse_vector_no_last[pop_linear_mse_vector_no_last <100000])
+
+## Plotting
+# Convert the list to a data frame
+pop_linear_mse_df <- data.frame(
+  Emission = names(pop_linear_mse_vector_no_last),
+  MSE = pop_linear_mse_vector_no_last
+)
+
+# Plotting using ggplot2
+library(ggplot2)
+
+ggplot(pop_linear_mse_df, aes(x = reorder(Emission, MSE), y = MSE)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +  # Flip coordinates to have horizontal bars
+  labs(title = "Mean Squared Error for Linear Models",
+       x = "Emission Variables",
+       y = "Mean Squared Error") +
+  theme_minimal(base_size = 4)
+
+library(car)
+print(names(sig_rsquared_vars))
+#avPlots(sig_rsquared_models[[2]], data = pop_trainset)
+
+if ("NRD npt Petrol (tC)_per_capita" %in% colnames(pop_trainset)) {
+  print("Variable is present in the dataset.")
+} else {
+  print("Variable is NOT present in the dataset.")
+}
+
+
+
+### Predicting each model using XGBOOSTED TREES:
+library(xgboost)
+library(Matrix)
+
+# Define a function to perform XGBoost for a given response variable
+
+library(xgboost)
+# Assuming 'pop_trainset' is your training set and 'pop_testset' is your testing set
+
+# Prepare data
+xgbtrain_data <- xgb.DMatrix(data = as.matrix(pop_trainset[, ..new_numcols]), label = pop_trainset$`RES npt Coal (tC)_per_capita`)
+xgbtest_data <- xgb.DMatrix(data = as.matrix(pop_testset[, ..new_numcols]), label = pop_testset$`RES npt Coal (tC)_per_capita`)
+
+# Set parameters
+params <- list(
+  booster = "gbtree",
+  objective = "reg:squarederror",
+  eta = 0.3,
+  gamma = 0,
+  max_depth = 6,
+  min_child_weight = 1,
+  subsample = 1,
+  colsample_bytree = 1
+)
+
+# Number of rounds
+nrounds <- 100
+
+# Training the model
+model <- xgb.train(params = params, data = train_data, nrounds = nrounds)
+
+# Predicting
+predictions <- predict(model, xgbtest_data)
+
+# Calculating RMSE
+rmse <- sqrt(mean((predictions - pop_testset$`RES npt Coal (tC)_per_capita`)^2))
+print(paste("RMSE for RES npt Coal (tC):", rmse))
+
+
+
+library(xgboost)
+
+# Prepare a function to perform the whole modeling process for one variable
+run_xgboost <- function(train_data, test_data, var_name) {
+  # Prepare the data for XGBoost
+  xgbtrain_data <- xgb.DMatrix(data = as.matrix(train_data[, ..new_numcols]), label = train_data[[var_name]])
+  xgbtest_data <- xgb.DMatrix(data = as.matrix(test_data[, ..new_numcols]), label = test_data[[var_name]])
+  
+  # Set parameters
+  params <- list(
+    booster = "gbtree",
+    objective = "reg:squarederror",
+    eta = 0.3,
+    gamma = 0,
+    min_child_weight = 1,
+    subsample = 1,
+    colsample_bytree = 1
+  )
+  
+  # Training the model
+  cvmodel <- xgb.cv(data = xgbtrain_data,print_every_n = 25, nrounds = 500, nfold = 5, early_stopping_rounds = 50, maximize = F, showsd = T,)
+  
+  # Predicting
+  
+  best_iteration <- cvmodel$best_iteration
+  best_rmse = cvmodel$evaluation_log$test_rmse_mean[best_iteration]
+  cv_mse = best_rmse^2
+  
+  model <- xgboost(data = xgbtrain_data, nrounds = best_iteration, print_every_n = 50, early_stopping_rounds = 50, maximize = F, objective = "reg:squarederror")
+  predictions <- predict(model, xgbtest_data)
+  
+  
+  # Calculating RMSE
+  mse <- mean((predictions - test_data[[var_name]])^2)
+  #return(list(model = model, xgbmse = mse, xgbrmse = sqrt(mse)))
+  return(list(model = model, xgbmse = mse, cvmse = cv_mse, xgbrmse = sqrt(mse), cvrmse = best_rmse))
+}
+
+# Run XGBoost for all emission variables
+results <- list()
+for(var in pop_emissions_vars) {
+  var = paste0(var,'_per_capita')
+  cat("Running XGBoost for", var, "\n")
+  results[[var]] <- run_xgboost(pop_trainset, pop_testset, var)
+}
+
+
+### FOR CONTEXT:
+means = list()
+for (var in pop_emissions_vars) {
+  var = paste0(var,'_per_capita')
+  means[[var]] = mean(pop_trainset[[var]])
+}
+avgmeanemis = mean(unlist(means))
+print(avgmeanemis)
+means_sorted = sort(unlist(means))
+print(means_sorted)
+
+print(sort(means_sorted - cvrmse_results))
+
+
+
+# Printing MSE for each variable
+xgbmse_results <- sapply(results, function(x) x$xgbmse)
+print(sort(xgbmse_results))
+
+# Printing RMSE for each variable
+xgbrmse_results <- sapply(results, function(x) x$xgbrmse)
+print(sort(xgbrmse_results))
+
+# Printing CV MSE for each variable
+cvmse_results <- sapply(results, function(x) x$cvmse)
+print(sort(cvmse_results))
+
+# Printing CV RMSE for each variable
+cvrmse_results <- sapply(results, function(x) x$cvrmse)
+print(sort(cvrmse_results))
+
+
+totalemisresults = list()
+for(var in pop_emissions_vars) {
+  var = paste0(var)
+  cat("Running XGBoost for", var, "\n")
+  totalemisresults[[var]] <- run_xgboost(pop_trainset, pop_testset, var)
+}
+
+# Printing MSE for each variable
+xgbmse_results <- sapply(totalemisresults, function(x) x$xgbmse)
+print(sort(xgbmse_results))
+
+# Printing RMSE for each variable
+xgbrmse_results <- sapply(totalemisresults, function(x) x$xgbrmse)
+print(sort(xgbrmse_results))
+
+
+cv_nrmse = (cvrmse_results/means_sorted)*100
+print(sort(cv_nrmse))
+
+
+
+## Predict the response variable using the models, then look at predictions and
+# map counties where error is largest; look at defining features in those counties,
+# try to understand why the model is failing there/why they are emitting more/less
+# than the model predicts.
