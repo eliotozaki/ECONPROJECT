@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import calmap
-from pandas_profiling import ProfileReport
+#from pandas_profiling import ProfileReport
 
 df = pd.read_csv("PandasTest.csv")
 df.head(10)
