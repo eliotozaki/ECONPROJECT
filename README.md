@@ -1,6 +1,9 @@
 This is the data side of an economics research project attmepting to find correlation and effects of income and tax county emission data using panel data from 2010-2021.
 
-Sources:
+_____________________________________________________________________________________________________________________________________________________
+
+
+**Sources:**
 
 https://vulcan.rc.nau.edu/
 
@@ -15,13 +18,17 @@ https://apps.bea.gov/histdatacore/Regional_Accounts_new.html
 https://www.census.gov/programs-surveys/stc/data/datasets.html?utm_source=chatgpt.com&text-list-4071d3d4f8%3Atab=all#text-list-4071d3d4f8
 _____________________________________________________________________________________________________________________________________________________
 
-Notes:
+**Notes:**
 
 Not sure if the names of counties are accurate in the political or modern sense, could be under an old name and 
 I am not intimately knowledgeable about every county in the US to know if they are correct; I apologize if any 
 counties are under an improper name.
 
-EMISSIONS VARIABLE NAMES:
+_____________________________________________________________________________________________________________________________________________________
+
+
+**EMISSIONS VARIABLE NAMES:**
+
 
 RES npt Coal (tC): Residential non-point source coal emissions (in tons of carbon)
 
@@ -136,6 +143,8 @@ ONR Total FFCO2 (tC): Total off-road fossil-fuel CO2 emissions (in tons of carbo
 NRD Total FFCO2 (tC): Total natural resources fossil-fuel CO2 emissions (in tons of carbon)
 
 AIR Total FFCO2 (tC): Total air fossil-fuel CO2 emissions (in tons of carbon)
+
 CMT Total CO2 (tC): Total commercial maritime transportation CO2 emissions (in tons of carbon)
+
 Total FFCO2 (tC): Total fossil-fuel CO2 emissions (in tons of carbon)
 
