@@ -1,0 +1,25 @@
+---
+title: "Tax Rate Effect on Carbon Emissions"
+author: "Eliot Ozaki"
+date: "2024-12-30"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(DoubleML)
+library(foreign)
+library(haven)
+library(sandwich)
+library(lmtest)
+library(stargazer)
+library(ggplot2)
+library(ggpubr)
+library(ggthemes)
+
+```
+
+
