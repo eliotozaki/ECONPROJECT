@@ -18,6 +18,16 @@ https://apps.bea.gov/histdatacore/Regional_Accounts_new.html
 https://www.census.gov/programs-surveys/stc/data/datasets.html?utm_source=chatgpt.com&text-list-4071d3d4f8%3Atab=all#text-list-4071d3d4f8
 _____________________________________________________________________________________________________________________________________________________
 
+**Guide:**
+
+Code for basic regression and cleaning for cross-sectional data is in "main/Project_Code"
+
+Code for Double Machine Learning for causal inference on panel data (2010-2021) will be in "main/ECONPROJECT Causal Inference Question Code (DML).Rmd"
+
+Code for cleaning panel data is in "main/ECONPROJECT Data Cleaning for DML.R"
+
+_____________________________________________________________________________________________________________________________________________________
+
 **Notes:**
 
 Not sure if the names of counties are accurate in the political or modern sense, could be under an old name and 
