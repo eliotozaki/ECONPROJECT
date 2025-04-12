@@ -7,6 +7,7 @@ library(Matrix)
 library(ggplot2)
 library(tidyverse)
 library(dplyr)
+library(stringr)
 
 
 # Load the data
@@ -24,6 +25,123 @@ cainc1 <- cainc1 %>% rename_with(~str_replace(., "X", ""), starts_with("X"))
 cainc30 <- cainc30 %>% rename_with(~str_replace(., "X", ""), starts_with("X"))
 
 summary(cagdp1)
+
+## Removing spaces at front of GeoFIPS
+dfs = list(cagdp1, cagdp2, cagdp8, cainc1, cainc30)
+
+for (i in seq_along(dfs)) {
+  df = dfs[[i]]
+  df$GeoFIPS <- as.character(df$GeoFIPS)
+  df$GeoFIPS <- df$GeoFIPS %>%
+    gsub("\\\\", "", .) %>%           # Remove backslashes
+    gsub('"', "", .) %>%             # Remove double quotes
+    gsub("^\\s+|\\s+$", "", .)
+  df_filtered = df %>% filter(grepl("^\\d{2}000$", GeoFIPS))
+  
+  filtered_geo_fips <- unique(df_filtered$GeoFIPS)
+  print(filtered_geo_fips)
+  
+  #removing all observations with a GeoFIPS in filtered_geo_fips
+  dfs[[i]] = df %>% filter(!GeoFIPS %in% filtered_geo_fips) 
+}
+
+cagdp1 = dfs[[1]]
+cagdp2 = dfs[[2]]
+cagdp8 = dfs[[3]]
+cainc1 = dfs[[4]]
+cainc30 = dfs[[5]]
+
+summary(cagdp1)
+
+
+### Finding what counties are in cainc30 and not in cagdp1
+cainc30_counties = unique(cainc30$GeoFIPS)
+cagdp1_counties = unique(cagdp1$GeoFIPS)
+
+cainc30_not_in_cagdp1 = cainc30_counties[!cainc30_counties %in% cagdp1_counties]
+print(cainc30_not_in_cagdp1)
+print(cainc30[cainc30$GeoFIPS %in% cainc30_not_in_cagdp1, "GeoName"])
+cagdp1 %>% filter("AK*" %in% GeoName)
+
+# Differences found in AK and WI county groupings when surveying
+cagdp1 %>% filter(grepl("^02\\d{3}",GeoFIPS)) %>% select("GeoName")
+
+
+#### Making State and County Columns
+
+# Extracting state and county from GeoFIPS
+cagdp1$State <- str_extract(cagdp1$GeoName, "[A-Z]{2}")
+cagdp1$County <- str_extract(cagdp1$GeoName, "^[^,]+")
+
+cagdp2$State <- str_extract(cagdp2$GeoName, "[A-Z]{2}")
+cagdp2$County <- str_extract(cagdp2$GeoName, "^[^,]+")
+
+cagdp8$State <- str_extract(cagdp8$GeoName, "[A-Z]{2}")
+cagdp8$County <- str_extract(cagdp8$GeoName, "^[^,]+")
+
+cainc1$State <- str_extract(cainc1$GeoName, "[A-Z]{2}")
+cainc1$County <- str_extract(cainc1$GeoName, "^[^,]+")
+
+cainc30$State <- str_extract(cainc30$GeoName, "[A-Z]{2}")
+cainc30$County <- str_extract(cainc30$GeoName, "^[^,]+")
+
+## TO DO####################################################################################
+# Housekeeping for counties with alternate characters in name (e.g. n with tildae)
+#dfs = list(cagdp1, cagdp2, cagdp8, cainc1, cainc30)
+
+
+
+#for (df in dfs) {
+  # Changing all "<f1>" to n:
+#  df$County <- gsub("\xf1", "n", df$County)
+  
+#}
+#############################################################################################################
+
+
+### Cleaning Alaska Data
+
+
+print(cagdp1 %>% filter(State == "AK") %>% select("GeoName"))
+print(cainc1 %>% filter(State == "AK") %>% select("GeoName"))
+
+cagdp1_ak_counties = cagdp1 %>% filter(State == "AK") %>% select("County") %>% distinct()
+cainc1_ak_counties = cainc1 %>% filter(State == "AK") %>% select("County") %>% distinct()
+
+print(cagdp1_ak_counties)
+print(cainc1_ak_counties)
+
+print(setdiff(cagdp1_ak_counties$County, cainc1_ak_counties$County))
+print(setdiff(cainc1_ak_counties$County, cagdp1_ak_counties$County))
+
+
+
+
+
+## Removing all rows where there is a value "(NA)" in the data
+
+# Display all rows with NA values in any column
+rows_with_na <- cagdp1 %>% filter(if_any(everything(), is.na))
+
+# Print the rows with NA
+print(rows_with_na)
+year_columns = colnames(cainc1)[9:(ncol(cainc1)-2)]
+
+print(cainc1 %>% filter(if_all(all_of(year_columns),~ . == "(NA)")))
+# REMOVING ALL OBS. WITH ALL NA VALUES
+cainc1 = cainc1 %>% filter(!if_all(all_of(year_columns),~ . == "(NA)"))
+
+
+print(cagdp1 %>% filter(State == "AK") %>% select("County") %>% distinct())
+print(cainc1 %>% filter(State == "AK") %>% select("County") %>% distinct())
+
+
+# Now looking at the same thing in cainc30
+year_columns = colnames(cainc30)[9:(ncol(cainc30)-2)]
+print(cainc30 %>% filter(if_all(all_of(year_columns),~ . == "(NA)")))
+
+
+
 
 # Separating cagdp1 by linecode/description
 cagdp1_realgdp = cagdp1 %>% filter(LineCode == 1)
@@ -132,4 +250,5 @@ for (i in seq_len(nrow(linecode_mapping))) {
   )
 }
 
-print(cagdp8 %>% filter(GeoFIPS == "\\d\\d000"))
+
+
