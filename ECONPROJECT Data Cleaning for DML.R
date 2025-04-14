@@ -242,6 +242,49 @@ tail(cainc30 %>% filter(is.na(LineCode)))
 
 cainc30 = cainc30 %>% filter(!is.na(LineCode))
 
+
+##################
+## Cleaning CAINC30
+
+# Finding differences:
+
+### Compare Counties Between cagdp1_realgdp and cainc30_average_wages_and_salaries
+# Find counties in cainc30_average_wages_and_salaries but not in cagdp1_realgdp
+counties_in_cainc30_not_cagdp1 <- anti_join(
+  cainc30, 
+  cainc1_personal_income, 
+  by = c("State", "County")
+) %>%
+  select(State, County, GeoFIPS, GeoName) %>%
+  distinct()
+
+# Find counties in cagdp1_realgdp but not in cainc30_average_wages_and_salaries
+counties_in_cagdp1_not_cainc30 <- anti_join(
+  cainc1_personal_income, 
+  cainc30, 
+  by = c("State", "County")
+) %>%
+  select(State, County, GeoFIPS, GeoName) %>%
+  distinct()
+
+# Print results
+cat("\nCounties in cainc30_average_wages_and_salaries but not in cagdp1_realgdp:\n")
+print(counties_in_cainc30_not_cagdp1)
+cat("\nCounties in cagdp1_realgdp but not in cainc30_average_wages_and_salaries:\n")
+print(counties_in_cagdp1_not_cainc30)
+
+# Summarize counts
+cat("\nNumber of counties in cainc30_average_wages_and_salaries but not in cagdp1_realgdp:", 
+    nrow(counties_in_cainc30_not_cagdp1), "\n")
+cat("Number of counties in cagdp1_realgdp but not in cainc30_average_wages_and_salaries:", 
+    nrow(counties_in_cagdp1_not_cainc30), "\n")
+
+cainc30 = cainc30 %>% filter(GeoFIPS %in% cainc1_personal_income$GeoFIPS)
+
+#################
+
+
+
 # Automate subset creation
 for (i in seq_len(nrow(linecode_mapping))) {
   assign(
@@ -250,5 +293,58 @@ for (i in seq_len(nrow(linecode_mapping))) {
   )
 }
 
+print(linecode_mapping)
+
+## Printing dims
+print(dim(cagdp1))
+
+## Finding differences between CAINC30 data frames and other data frames
+tail(cagdp1_realgdp)
+tail(`cainc30_population_(persons)`)
 
 
+
+
+
+
+
+
+########Finding differences between cagdp1_realgdp and cainc1_personal_income
+# Find counties in cainc1_personal_income but not in cagdp1_realgdp
+
+counties_in_cainc1_not_cagdp1 <- anti_join(
+  cainc1_personal_income, 
+  cagdp1_realgdp, 
+  by = c("State", "County")
+) %>%
+  select(State, County, GeoFIPS, GeoName) %>%
+  distinct()
+
+# Find counties in cagdp1_realgdp but not in cainc1_personal_income
+counties_in_cagdp1_not_cainc1 <- anti_join(
+  cagdp1_realgdp, 
+  cainc1_personal_income, 
+  by = c("State", "County")
+) %>%
+  select(State, County, GeoFIPS, GeoName) %>%
+  distinct()
+
+# Print results
+cat("\nCounties in cainc1_personal_income but not in cagdp1_realgdp:\n")
+print(counties_in_cainc1_not_cagdp1)
+cat("\nCounties in cagdp1_realgdp but not in cainc1_personal_income:\n")
+print(counties_in_cagdp1_not_cainc1)
+# Summarize counts
+cat("\nNumber of counties in cainc1_personal_income but not in cagdp1_realgdp:", 
+    nrow(counties_in_cainc1_not_cagdp1), "\n")
+cat("Number of counties in cagdp1_realgdp but not in cainc1_personal_income:",
+    nrow(counties_in_cagdp1_not_cainc1), "\n")
+
+print(cagdp1_realgdp %>% filter(State == "AK")) %>% select("GeoName")
+
+
+
+
+
+
+### TO DO: Clean rest of CAGDP1, CAGDP8, Etc to match CAINC1 (use CAINC1_personal_income)
